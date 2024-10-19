@@ -43,24 +43,6 @@ H2_YT=rws(0x00403516)
 H2_XL=rws(0x00403518)
 H2_YB=rws(0x0040351A)
 
--- gui.drawText(0,0,"SPR: " .. bizstring.hex(Sprite),0xFFFFFFFF,0x00000000,14)
--- gui.drawText(0,10,"ALN: " .. bizstring.hex(Align),0xFFFFFFFF,0x00000000,14)
--- gui.drawText(0,20,"HIT: " .. bizstring.hex(Hitbox),0xFFFFFFFF,0x00000000,14)
--- gui.drawText(180,0,"SPRTIME: " .. (SPRTime),0xFFFFFFFF,0x00000000,14)
--- gui.drawText(180,10,"SPRFRAME: " .. (SPRFrame),0xFFFFFFFF,0x00000000,14)
-
--- gui.drawText(330,91,"A1_W?: " .. (A1_A),0xFFFF0000,0x00000000,10)
-
--- gui.drawText(330,121,"PXR: " .. (P_XR),0xFF00FF00,0x00000000,10)
--- gui.drawText(330,131,"PYT: " .. (P_YT),0xFF00FF00,0x00000000,10)
--- gui.drawText(330,141,"PXL: " .. (P_XL),0xFF00FF00,0x00000000,10)
--- gui.drawText(330,151,"PYB: " .. (P_YB),0xFF00FF00,0x00000000,10)
-
--- gui.drawText(330,161,"H1R: " .. (H1_XR),0xFF0000FF,0x00000000,10)
--- gui.drawText(330,171,"H1T: " .. (H1_YT),0xFF0000FF,0x00000000,10)
--- gui.drawText(330,181,"H1L: " .. (H1_XL),0xFF0000FF,0x00000000,10)
--- gui.drawText(330,191,"H1B: " .. (H1_YB),0xFF0000FF,0x00000000,10)
-
 -------------------------------------
 --Draw Boxes
 
@@ -82,8 +64,8 @@ if Action then
 		0+(YPos_SCR)+H1_YT,
 		XPos_SCR+H1_XL,
 		0+(YPos_SCR)+H1_YB,
-		0x7476ff30,
-		0x7476ffFF)
+		0x7777FF30,
+		0x7777FFFF)
 end
 
 --Hurtbox 2
@@ -93,8 +75,8 @@ if Action then
 		0+(YPos_SCR)+H2_YT,
 		XPos_SCR+H2_XL,
 		0+(YPos_SCR)+H2_YB,
-		0x7476ff30,
-		0x7476ffFF)
+		0x7777FF30,
+		0x7777FFFF)
 end
 
 --Hitbox 1
@@ -104,8 +86,8 @@ if Action then
 		0+(YPos_SCR)+A1_YT,
 		XPos_SCR+A1_XL,
 		0+(YPos_SCR)+A1_YB,
-		0xfd000030,
-		0xfd0000FF)
+		0xFF000030,
+		0xFF0000FF)
 end
 
 --Hitbox 2
@@ -115,8 +97,8 @@ if Action then
 		0+(YPos_SCR)+A2_YT,
 		XPos_SCR+A2_XL,
 		0+(YPos_SCR)+A2_YB,
-		0xfd000030,
-		0xfd0000FF)
+		0xFF000030,
+		0xFF0000FF)
 end
 
 --Clash Hitbox
@@ -191,8 +173,8 @@ if Action then
 		0+(YPos_SCR)+H1_YT,
 		XPos_SCR+H1_XL,
 		0+(YPos_SCR)+H1_YB,
-		0x7476ff30,
-		0x7476ffFF)
+		0x7777FF30,
+		0x7777FFFF)
 end
 
 --Hurtbox 2
@@ -202,8 +184,8 @@ if Action then
 		0+(YPos_SCR)+H2_YT,
 		XPos_SCR+H2_XL,
 		0+(YPos_SCR)+H2_YB,
-		0x7476ff30,
-		0x7476ffFF)
+		0x7777FF30,
+		0x7777FFFF)
 end
 
 --Hitbox 1
@@ -213,8 +195,8 @@ if Action then
 		0+(YPos_SCR)+A1_YT,
 		XPos_SCR+A1_XL,
 		0+(YPos_SCR)+A1_YB,
-		0xfd000030,
-		0xfd0000FF)
+		0xFF000030,
+		0xFF0000FF)
 end
 
 --Hitbox 2
@@ -224,8 +206,8 @@ if Action then
 		0+(YPos_SCR)+A2_YT,
 		XPos_SCR+A2_XL,
 		0+(YPos_SCR)+A2_YB,
-		0xfd000030,
-		0xfd0000FF)
+		0xFF000030,
+		0xFF0000FF)
 end
 
 --Clash Hitbox
