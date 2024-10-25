@@ -9,8 +9,10 @@ p2maxmeter = 0x40
 local p1direction = 0x4033DB
 local p2direction = 0x404091
 
-local p1combocounter = 0x403DBD
-local p2combocounter = 0x404A7D
+--local p1combocounter = 0x403DBD
+--local p2combocounter = 0x404A7D
+local p1combocounter = 0x4041DF
+local p2combocounter = 0x403523
 
 translationtable = {
 	"left",
