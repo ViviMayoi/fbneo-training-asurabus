@@ -47,5 +47,6 @@ standing           = 0x00
 crouching          = 0x01
 airborne           = 0x02
 dashing            = 0x03
+grounded_special   = 0x04
 knocked_down       = 0x05
-launched           = 0x07
+launched_blocking  = 0x07 -- applies for both of them. don't ask. i don't know either.
