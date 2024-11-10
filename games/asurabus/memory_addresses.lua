@@ -5,11 +5,11 @@
 -- https://github.com/Asunarooo/fbneo-training-mode
 -- Made by ViviMayoi and Xenn
 -------------------------------------------------------
-ADDRESSES = {
+
   global = {
       Hitstop      = 0x400007,
       CameraX      = 0x00400024,
-  },
+  }
   players = {
     {
       SPRTime      = 0x004033C4,
@@ -94,7 +94,9 @@ ADDRESSES = {
       CounterHitState = 0x404069, -- byte
       StanceState = 0x403DDB, -- byte
       HitState = 0x404B10, -- word
-      HitFrameCounter = 0x404B12 --word
+      HitFrameCounter = 0x404B12, --word
+      CancelOptions = 0x403500, --word
+      Actionable   = 0x004033E6 -- more testing needed
     },
     {
       AttackState = 0x4040A8, -- word
@@ -107,4 +109,3 @@ ADDRESSES = {
       HitFrameCounter = 0x404B12 -- word
     }
   }
-}

@@ -1,65 +1,57 @@
+require("/games/asurabus/constants")
+require("/games/asurabus/memory_addresses")
+
 local rb, rbs, rw, rws, rd = memory.readbyte, memory.readbytesigned, memory.readword, memory.readwordsigned,
     memory.readdword
 
--- HitboxActive = false
--- ProjectileStart = 0
--- ProjectileEnd = 0
--- ProjectileFrames = 0
--- ProjectileID = 0
--- ProjectileOn = false
-
 DebugMessage = "How did you see this?";
 
--- function CheckProjectile()
---     local ProjectileOnScreen = false;
---     local AttackState = rw(0x004033F8)
+CurrentAnim = 0x00;
+Startup = -1;
+Active = -1;
+Recovery = -1;
+CurrentFrame = -1;
+function ShowFrameData()
+    local move_id = rws(players[1].AnimationID)
+    local is_active = rws(players[1].AttackState) ~= 0
+    local hitstop = rws(global.Hitstop)
+    if move_id == CurrentAnim then
+        if hitstop == 0 then
+            CurrentFrame = CurrentFrame + 1
+        end
+        if is_active then
+            if Startup == -1 then
+                if hitstop == 0 then
+                    Startup = CurrentFrame
+                else
+                    Startup = CurrentFrame + 1
+                end
+            end
+            Active = CurrentFrame - Startup + 1
+        end
+    else
+        if Startup ~= -1 then
+            Recovery = CurrentFrame - (Startup + Active) +2 
+            -- +1 because using first active for startup; +1 because of forced neutral frame
+            DebugMessage = "Move ID " ..
+            CurrentAnim ..
+            ": S" .. Startup .. " A" .. Active .. " R" .. Recovery .. " (T" .. Startup + Active + Recovery - 1 .. ")"
+        end
+        CurrentFrame, CurrentAnim = 1, move_id
+        Startup, Active, Recovery = -1, -1, -1
+    end
+    NowActive = move_id
+end
 
---     for i = 0, 31, 1 do
---         local On   = rbs(0x004039B0 + (i * 0x10))
---         local ID   = rws(0x004039B2 + (i * 0x10))
---         local Time = rb(0x004039BB + (i * 0x10))
---         local Hit  = rbs(0x004039BF + (i * 0x10))
+-- function DamageCalc(damage, hitCount)
+--     damage = ((damage * 32) & 0xFFFF) >> 5 -- shave off excess bits;  >> 5 is effectively dividing by 32
 
---         if (On > 0 and Hit == 1) then
---             ProjectileOnScreen = true;
---             ProjectileFrames = Time;
---             ProjectileID = ID;
-
---             if (AttackState ~= 0) then
---                 if (HitboxActive == false) then
---                     ProjectileStart = ProjectileFrames
---                     HitboxActive = true
---                 end
---             elseif (HitboxActive == true) then
---                 ProjectileEnd = ProjectileFrames - 2;
---                 HitboxActive = false;
---             end
---         end
+--     if hitCount > 11 then
+--         hitCount = 11
 --     end
 
---     if (ProjectileOnScreen == false and ProjectileOn == true) then
---         if (ProjectileEnd == 0) then
---             ProjectileEnd = ProjectileFrames
---             HitboxActive = false
---         end
---         ProjectileMessage = "Projectile " .. ProjectileID ..  ": " .. ProjectileFrames .. "F on screen, active F"
---             .. ProjectileStart .. "-" .. ProjectileEnd  .. "(" .. ProjectileEnd + 1 - ProjectileStart .. ")";
---         HitboxActive = false;
+--     DamageTable = {0x20, 0x1A, 0x14, 0x10, 0x0C, 0x0A, 0x08, 0x06, 0x05, 0x04, 0x02, 0x01}
+--     modifier = DamageTable[hitCount + 1]
 
---         ProjectileStart = 0
---         ProjectileEnd = 0
---         ProjectileFrames = 0
---     end
-
---     ProjectileOn = ProjectileOnScreen
---     --end
+--     damage = ((damage * modifier) & 0xFFFF) >> 5
 -- end
-
-
--- p1_alice_hidden_623X_projectile_data = {
---    Version = -1,
---    ActiveProjectile = {},
---}
---for i = -1, 31, 1 do
---    p1_alice_hidden_623X_projectile_data.ActiveProjectile[i] = -1;
---end

@@ -1,5 +1,5 @@
 assert(rb, "Run fbneo-training-mode.lua")
---require("/games/asurabus/gamestate")
+require("/games/asurabus/gamestate")
 
 local rb, rbs, rw, rws, rd = memory.readbyte, memory.readbytesigned, memory.readword, memory.readwordsigned,
 	memory.readdword
@@ -121,5 +121,6 @@ end
 function Run() -- runs every frame
 	infiniteTime()
 	secretCharacters()
-	--gui.text(10, 230, DebugMessage);
+	ShowFrameData()
+	gui.text(10, 230, DebugMessage .. " | Current: " .. NowActive);
 end
