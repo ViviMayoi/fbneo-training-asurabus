@@ -95,7 +95,9 @@
       StanceState = 0x403DDB, -- byte
       HitState = 0x404B10, -- word
       HitFrameCounter = 0x404B12, --word
+      AirOptions = 0x4034DA, --word (really 4 nybbles)
       CancelOptions = 0x403500, --word
+      LaunchCount = 0x4034DC, --word
       Actionable   = 0x004033E6 -- more testing needed
     },
     {
