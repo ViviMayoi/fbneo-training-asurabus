@@ -9,6 +9,7 @@
   global = {
       Hitstop      = 0x400007,
       CameraX      = 0x00400024,
+      
   }
   players = {
     {
@@ -86,19 +87,20 @@
       pHit         = 0x004039BF,
 
       -- Other
-      AttackState = 0x4033F0, -- word
       AnimationID = 0x4033C0, -- word
-      PrevAnimID = 0x4033C9, -- byte
+      PrevAnimID = 0x4033C8, -- word
+      AttackState = 0x4033F0, -- word
+      AirOptions = 0x4034DA, --word (really 4 nybbles)
+      LaunchCount = 0x4034DC, --word
+      Actionable   = 0x004033E6, -- more testing needed
+      Airborne = 0x4034FC, -- word
+      StanceState = 0x403DDA, -- word
+      CancelOptions = 0x403500, --word
       Hitstun = 0x403523, -- byte
       Blockstun = 0x404029, -- byte
       CounterHitState = 0x404069, -- byte
-      StanceState = 0x403DDB, -- byte
       HitState = 0x404B10, -- word
       HitFrameCounter = 0x404B12, --word
-      AirOptions = 0x4034DA, --word (really 4 nybbles)
-      CancelOptions = 0x403500, --word
-      LaunchCount = 0x4034DC, --word
-      Actionable   = 0x004033E6 -- more testing needed
     },
     {
       AttackState = 0x4040A8, -- word

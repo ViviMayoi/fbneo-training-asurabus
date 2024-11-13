@@ -162,7 +162,7 @@ function P1() --P1 Info
 				skullBorderColor = 0xFF0000FF
 			end
 
-			if (Active > 0) then
+			if Active > 0 then
 				if ATK > 0 then
 					if ATK == 1 then
 						if Facing == 0 then
@@ -903,11 +903,11 @@ end
 
 function hitboxesReg()
 	if hitboxes.enabled then
-		CameraX = rws(0x00400024)
 		P1();
 		P2();
 	end
 end
 
 function hitboxesRegAfter()
+	CameraX = rws(0x00400024)
 end

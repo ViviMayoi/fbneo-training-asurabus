@@ -110,7 +110,9 @@ function writePlayerTwoMeter(meter)
 end
 
 function infiniteTime()
-	wb(0x40000A, 0x99)
+	wb(0x40000A, 0x90)
+	wb(0x40000B, 0xFF)
+	wb(0x400006, 0x60)
 end
 
 function secretCharacters()
@@ -119,8 +121,14 @@ function secretCharacters()
 end
 
 function Run() -- runs every frame
+	if NowActive == nil then
+		NowActive = 0
+	end
+	gui.text(10, 230, DebugMessage .. " | Current: " .. NowActive);
+end
+
+function RunAfter()
 	infiniteTime()
 	secretCharacters()
-	ShowFrameData()
-	gui.text(10, 230, DebugMessage .. " | Current: " .. NowActive);
+	ParseFrameData()
 end

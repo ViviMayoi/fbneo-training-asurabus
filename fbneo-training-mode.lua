@@ -438,6 +438,7 @@ availablefunctions = {}
 checkAvailableFunctions = function() -- SETUP availablefunctions TABLE
 	-- Training mode functions
 	if Run then availablefunctions.run = true end
+	if RunAfter then availablefunctions.runafter = true end
 	if playerOneInHitstun then availablefunctions.playeroneinhitstun = true end
 	if playerTwoInHitstun then availablefunctions.playertwoinhitstun = true end
 	if readPlayerOneHealth then availablefunctions.readplayeronehealth = true end
@@ -3201,7 +3202,13 @@ setRegisters = function() -- pre-calc stuff
 	if availablefunctions.run then
 		table.insert(registers.guiregister, Run)
 	else
-		print "Nothing running every frame from memory file"
+		print "Nothing running every displayed frame from memory file"
+	end
+
+	if availablefunctions.runafter then
+		table.insert(registers.registerafter, RunAfter)
+	else
+		print "Nothing running every emulated frame from memory file"
 	end
 
 	local str = ""
