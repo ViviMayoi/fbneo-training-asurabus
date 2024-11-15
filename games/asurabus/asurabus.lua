@@ -120,15 +120,32 @@ function secretCharacters()
 	wb(0x408839, 0x01)
 end
 
-function Run() -- runs every frame
-	if NowActive == nil then
-		NowActive = 0
-	end
-	gui.text(10, 230, DebugMessage .. " | Current: " .. NowActive);
+function MuteMusic()
+	ww(0x402C2A, 0)
 end
 
-function RunAfter()
+function RunBefore() -- runs before every frame
 	infiniteTime()
 	secretCharacters()
-	ParseFrameData()
+	CheckHitstun()
 end
+
+function RunAfter() -- runs after every emulated frame
+	CheckOpponentStunned()
+	ParseFrameData()
+	ParseFrameAdv()
+end
+
+function Run() -- runs on every displayed frame
+	gui.text(10, 230, FrameDataOutput .. Advantage .. " [" .. NowActive .. "]");
+	gui.text(4, 4, DebugMessage)
+end
+
+emu.registerstart(function()
+	NowActive = 0
+	FrameDataOutput = "N/A";
+	DebugMessage = "How did you see this?"
+	memory.registerread(0x402C2A, 2, function()
+		MuteMusic()
+	end)
+end)

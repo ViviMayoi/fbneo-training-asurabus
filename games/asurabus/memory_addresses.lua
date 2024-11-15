@@ -6,110 +6,112 @@
 -- Made by ViviMayoi and Xenn
 -------------------------------------------------------
 
-  global = {
-      Hitstop      = 0x400007,
-      CameraX      = 0x00400024,
-      
-  }
-  players = {
-    {
-      SPRTime      = 0x004033C4,
-      SPRFrame     = 0x004033CA,
-      XPos_SCR     = 0x004033CE,
-      YPos_SCR     = 0x004033D0,
-      Facing       = 0x004033DA,
-      Character    = 0x004039A6,
-      Boost        = 0x00403F56,
-    
-      --Hitbox 1
-      A1_XR        = 0x004033F6,
-      A1_YT        = 0x004033F8,
-      A1_XL        = 0x004033FA,
-      A1_YB        = 0x004033FC,
-      --Hitbox 2
-      A2_XR        = 0x004033FE,
-      A2_YT        = 0x00403400,
-      A2_XL        = 0x00403402,
-      A2_YB        = 0x00403404,
-      --Clashbox
-      C1_XR        = 0x00403406,
-      C1_YT        = 0x00403408,
-      C1_XL        = 0x0040340A,
-      C1_YB        = 0x0040340C,
-    
-        --Pushbox
-      P_XR         = 0x00403504,
-      P_YT         = 0x00403506,
-      P_XL         = 0x00403508,
-      P_YB         = 0x0040350A,
-      --Hurtbox 1
-      H1_XR        = 0x0040350C,
-      H1_YT        = 0x0040350E,
-      H1_XL        = 0x00403510,
-      H1_YB        = 0x00403512,
-      --Hurtbox 2
-      H2_XR        = 0x00403514,
-      H2_YT        = 0x00403516,
-      H2_XL        = 0x00403518,
-      H2_YB        = 0x0040351A,
-    
-      -- Secondary entities (DMW, boost mode afterimages)
-      DMW_XPos_SCR = 0x00404D42,
-      DMW_YPos_SCR = 0x00404D44,
-      DMW_Facing   = 0x00404D4E,
-      DMW_ATKState = 0x00404D64,
-      --Hitbox 1
-      DMW_A1_XR    = 0x00404D6A,
-      DMW_A1_YT    = 0x00404D6C,
-      DMW_A1_XL    = 0x00404D6E,
-      DMW_A1_YB    = 0x00404D70,
-      --Hitbox 2
-      DMW_A2_XR    = 0x00404D72,
-      DMW_A2_YT    = 0x00404D74,
-      DMW_A2_XL    = 0x00404D76,
-      DMW_A2_YB    = 0x00404D78,
-      --Clashbox
-      DMW_C1_XR    = 0x00404D7A,
-      DMW_C1_YT    = 0x00404D7C,
-      DMW_C1_XL    = 0x00404D7E,
-      DMW_C1_YB    = 0x00404D80,
-      ---------------------------------------
-    
-      ---------------------------------------
-      -- Projectiles
-      pOn          = 0x004039B0,
-      pType        = 0x004039B1,
-      pID          = 0x004039B2,
-      pXPos        = 0x004039B4,
-      pYPos        = 0x004039B6,
-      pFacing      = 0x004039B8,
-      pTime        = 0x004039BB,
-      pHit         = 0x004039BF,
+global = {
+  Hitstop      = 0x400007, -- byte
+  CameraX      = 0x400024, -- word
+  SuperFlash = "m68000.a0"
+}
+players = {
+  {
+    --Hitbox 1
+    A1_XR         = 0x4033F6,
+    A1_YT         = 0x4033F8,
+    A1_XL         = 0x4033FA,
+    A1_YB         = 0x4033FC,
+    --Hitbox 2
+    A2_XR         = 0x4033FE,
+    A2_YT         = 0x403400,
+    A2_XL         = 0x403402,
+    A2_YB         = 0x403404,
+    --Clashbox
+    C1_XR         = 0x403406,
+    C1_YT         = 0x403408,
+    C1_XL         = 0x40340A,
+    C1_YB         = 0x40340C,
 
-      -- Other
-      AnimationID = 0x4033C0, -- word
-      PrevAnimID = 0x4033C8, -- word
-      AttackState = 0x4033F0, -- word
-      AirOptions = 0x4034DA, --word (really 4 nybbles)
-      LaunchCount = 0x4034DC, --word
-      Actionable   = 0x004033E6, -- more testing needed
-      Airborne = 0x4034FC, -- word
-      StanceState = 0x403DDA, -- word
-      CancelOptions = 0x403500, --word
-      Hitstun = 0x403523, -- byte
-      Blockstun = 0x404029, -- byte
-      CounterHitState = 0x404069, -- byte
-      HitState = 0x404B10, -- word
-      HitFrameCounter = 0x404B12, --word
-    },
-    {
-      AttackState = 0x4040A8, -- word
-      AnimationID = 0x404076, -- word
-      PrevAnimID = 0x40407F, -- byte
-      Hitstun = 0x4041DF, -- byte
-      CounterHitState = 0x40326A, -- byte
-      StanceState = 0x404A9B, -- byte
-      HitState = 0x404B10, -- word
-      HitFrameCounter = 0x404B12 -- word
-    }
+    --Pushbox
+    P_XR          = 0x403504,
+    P_YT          = 0x403506,
+    P_XL          = 0x403508,
+    P_YB          = 0x40350A,
+    --Hurtbox 1
+    H1_XR         = 0x40350C,
+    H1_YT         = 0x40350E,
+    H1_XL         = 0x403510,
+    H1_YB         = 0x403512,
+    --Hurtbox 2
+    H2_XR         = 0x403514,
+    H2_YT         = 0x403516,
+    H2_XL         = 0x403518,
+    H2_YB         = 0x40351A,
+
+    -- Secondary entities (DMW, boost mode afterimages)
+    DMW_XPos_SCR  = 0x404D42,
+    DMW_YPos_SCR  = 0x404D44,
+    DMW_Facing    = 0x404D4E,
+    DMW_ATKState  = 0x404D64,
+    --Hitbox 1
+    DMW_A1_XR     = 0x404D6A,
+    DMW_A1_YT     = 0x404D6C,
+    DMW_A1_XL     = 0x404D6E,
+    DMW_A1_YB     = 0x404D70,
+    --Hitbox 2
+    DMW_A2_XR     = 0x404D72,
+    DMW_A2_YT     = 0x404D74,
+    DMW_A2_XL     = 0x404D76,
+    DMW_A2_YB     = 0x404D78,
+    --Clashbox
+    DMW_C1_XR     = 0x404D7A,
+    DMW_C1_YT     = 0x404D7C,
+    DMW_C1_XL     = 0x404D7E,
+    DMW_C1_YB     = 0x404D80,
+    ---------------------------------------
+
+    ---------------------------------------
+    -- Projectiles
+    pOn           = 0x4039B0,
+    pType         = 0x4039B1,
+    pID           = 0x4039B2,
+    pXPos         = 0x4039B4,
+    pYPos         = 0x4039B6,
+    pFacing       = 0x4039B8,
+    pTime         = 0x4039BB,
+    pHit          = 0x4039BF,
+
+    -- Other
+    AnimationID   = 0x4033C0, -- word
+    SPRFrame      = 0x4033C2, -- word
+    SPRTime       = 0x4033C4, -- word
+    PrevAnimID    = 0x4033C8, -- word
+    XPos_SCR      = 0x4033CE,
+    YPos          = 0x4033D0,
+    Facing        = 0x4033DA,
+    AttackState   = 0x4033F0, -- word
+    AirOptions    = 0x4034DA, --word (really 4 nybbles)
+    LaunchCount   = 0x4034DC, --word
+    Actionable    = 0x4033E6, -- more testing needed
+    Airborne      = 0x4034FC, -- word
+    CancelOptions = 0x403500, --word
+    Hitstun       = 0x403523, -- byte
+    Character     = 0x4039A6,
+    StanceState   = 0x403DDA, -- word
+    Boost         = 0x403F56,
+    Blockstun     = 0x404028, -- word
+    CounterState  = 0x404068, -- word
+  },
+
+  -- Player 2
+  {
+    AnimationID     = 0x404076, -- word
+    SPRFrame        = 0x404078, -- word
+    SPRTime         = 0x404080, -- word
+    PrevAnimID      = 0x40407E, -- byte
+    AttackState     = 0x4040A8, -- word
+    Hitstun         = 0x4041DE, -- word
+    StanceState     = 0x404A9A, -- word
+    HitState        = 0x404B10, -- word
+    HitFrameCounter = 0x404B12, --word
+    Blockstun       = 0x404CE8, -- word
+    CounterState    = 0x404D26  -- word
   }
+}
