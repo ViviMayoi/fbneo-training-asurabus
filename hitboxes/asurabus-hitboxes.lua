@@ -201,9 +201,9 @@ function P1() --P1 Info
 	--Pushbox
 	if (P_XR or P_YT or P_XL or P_YB ~= 0) and Facing == 1 then
 		gui.box(
-			XPos_SCR + P_XR,
+			XPos_SCR + P_XR-1,
 			0 + (YPos_SCR) + P_YT,
-			XPos_SCR + P_XL,
+			XPos_SCR + P_XL-1,
 			0 + (YPos_SCR) + P_YB,
 			0x00FF0030,
 			0x00FF00FF)
@@ -618,9 +618,9 @@ function P2() --P2 Info
 	--Pushbox
 	if (P_XR or P_YT or P_XL or P_YB ~= 0) and Facing == 1 then
 		gui.box(
-			XPos_SCR + P_XR,
+			XPos_SCR + P_XR-1,
 			0 + (YPos_SCR) + P_YT,
-			XPos_SCR + P_XL,
+			XPos_SCR + P_XL-1,
 			0 + (YPos_SCR) + P_YB,
 			0x00FF0030,
 			0x00FF00FF)
