@@ -131,8 +131,8 @@ function RunBefore() -- runs before every frame
 end
 
 function RunAfter() -- runs after every emulated frame
-	CheckOpponentStunned()
-	ParseFrameData()
+	CheckActionableP2()
+	ParseFrameDataP1()
 	ParseFrameAdv()
 end
 

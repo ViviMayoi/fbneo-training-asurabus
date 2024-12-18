@@ -10,36 +10,25 @@ local startup = -1;
 local active = -1;
 local recovery = -1;
 
-local opponentIsActionable = true
+local isCancellableP1 = 0;
+local isActionableP1 = true
 local framesSinceP1Actionable = -1
-local framesSinceP2Actionable = -1
-local hitstun = 0;
-local hitState = 0;
---local hitstop = 0;
---local superFlash = 0;
 local sprTimeP1 = -1;
 local sprFrameP1 = -1;
 local prevFrameP1 = -1;
 local prevTimeP1 = -1;
+
+local is
+local isActionableP2 = true
+local framesSinceP2Actionable = -1
+local hitstunP2 = 0;
+local hitStateP2 = 0;
 local sprTimeP2 = -1;
 local sprFrameP2 = -1;
 local prevFrameP2 = -1;
 local prevTimeP2 = -1;
---local blockstun = 0;
 
 Advantage = ""
-
-local function isFrozenP1()
-    --return superFlash == 0x7 or hitstop ~= 0
-
-    return (sprTimeP1 == prevTimeP1 and sprFrameP1 == prevFrameP1)
-end
-
-local function isFrozenP2()
-    --return superFlash == 0x7 or hitstop ~= 0
-
-    return (sprTimeP2 == prevTimeP2 and sprFrameP2 == prevFrameP2)
-end
 
 local function formatAdvantage(adv)
     if adv > 0 then
@@ -72,49 +61,23 @@ local function checkWakeUp(id)
 end
 
 function CheckHitstun()
-    hitstun = rws(players[2].Hitstun)
+    hitstunP1 = rw(players[1].Hitstun)
+    hitstunP2 = rw(players[2].Hitstun)
 end
 
-function CheckOpponentStunned()
-    local anim = rws(players[2].AnimationID)
-    hitState = rws(players[2].HitState)
-    --blockstun = rws(players[2].Blockstun)
-    local animPrev = rws(players[2].PrevAnimID)
-    local animStun = checkAnimStun(anim)
-    local wakeup = checkWakeUp(animPrev)
-
-    local animString;
-    local actString;
---
-    if animStun then
-        animString = anim .. "Y"
-    elseif wakeup then
-        animString = anim .. "W" .. animPrev
-    else
-        animString = anim .. "N"
-    end
-
-    local canAct = (hitstun ~= 0 or hitState ~= 0 or animStun or wakeup) == false
-    if canAct then
-        actString = " — ACTIONABLE"
-    else
-        actString = " — STUNNED"
-    end
-
-    DebugMessage = "Hitstun: " ..
-        hitstun .. " | Hitstate: " .. hitState .. " | Anim: " .. animString .. actString
-    opponentIsActionable = canAct
+local function isFrozenP1()
+    return (sprTimeP1 == prevTimeP1 and sprFrameP1 == prevFrameP1)
 end
 
-function ParseFrameData()
+function ParseFrameDataP1()
     sprTimeP1, sprFrameP1 = rw(players[1].SPRTime), rw(players[1].SPRFrame)
+
+    isCancellableP1 = rw(players[1].CanCancel)
+    DebugMessage = DebugMessage .. ". Cancel = " .. isCancellableP1
 
     local move_id = rws(players[1].AnimationID)
     local is_active = rws(players[1].AttackState) ~= 0
-    --hitstop = rw(global.Hitstop)
-    --superFlash = bit.band(memory.getregister(global.SuperFlash), 0xFFFF0000)/65536
-    --DebugMessage = superFlash .. " ~ " .. memory.getregister(global.SuperFlash)
-    --if move_id == currentAnim or (move_id == 0x17 and rws(players[1].Airborne) ~= 0) then
+
     if move_id == currentAnim then
         if isFrozenP1() == false then
             currentFrame = currentFrame + 1
@@ -135,7 +98,7 @@ function ParseFrameData()
             -- +1 because using first active for startup
             FrameDataOutput = "Move ID " .. currentAnim ..
                 ": S" .. startup .. " A" .. active .. " R" .. recovery .. " (T" ..
-                startup + active + recovery - 1 .. ")"
+                startup + active + recovery - 1 .. ") "
             -- start the counter for frame advantage calc
             framesSinceP1Actionable = 0
         end
@@ -145,9 +108,46 @@ function ParseFrameData()
     NowActive = move_id
 end
 
+local function isFrozenP2()
+    --return superFlash == 0x7 or hitstop ~= 0
+
+    return (sprTimeP2 == prevTimeP2 and sprFrameP2 == prevFrameP2)
+end
+
+function CheckActionableP2()
+    local anim = rws(players[2].AnimationID)
+    --hitStateP2 = rws(players[2].HitState)
+    --blockstun = rws(players[2].Blockstun)
+    local animPrev = rws(players[2].PrevAnimID)
+    local animStun = checkAnimStun(anim)
+    local wakeup = checkWakeUp(animPrev)
+
+    local animString;
+    local actString;
+    --
+    if animStun then
+        animString = anim .. "Y"
+    elseif wakeup then
+        animString = anim .. "W" .. animPrev
+    else
+        animString = anim .. "N"
+    end
+
+    local canAct = (hitstunP2 ~= 0 or animStun or wakeup) == false
+    if canAct then
+        actString = " — ACTIONABLE"
+    else
+        actString = " — STUNNED"
+    end
+
+    DebugMessage = "Hitstun: " ..
+        hitstunP2 .. " | Hitstate: " .. hitStateP2 .. " | Anim: " .. animString .. actString
+    isActionableP2 = canAct
+end
+
 function ParseFrameAdv()
     sprTimeP2, sprFrameP2 = rw(players[2].SPRTime), rw(players[2].SPRFrame)
-    if opponentIsActionable then
+    if isActionableP2 then
         -- p2 is actionable, increment the counter
         if isFrozenP2() == false then
             framesSinceP2Actionable = framesSinceP2Actionable + 1
@@ -163,7 +163,7 @@ function ParseFrameAdv()
         framesSinceP1Actionable = -1
     elseif framesSinceP1Actionable ~= -1 and framesSinceP2Actionable == -1 then
         -- p1 is plus, waiting on p2
-        if opponentIsActionable then
+        if isActionableP2 then
             -- advantage is just P1's frame counter since P2's would equal 0
             formatAdvantage(framesSinceP1Actionable)
             -- reset the counter for next calc
@@ -190,3 +190,15 @@ end
 
 --     damage = ((damage * modifier) & 0xFFFF) >> 5
 -- end
+
+function IsPlayerActionable(p)
+    -- movement
+    actions = { Movement = false, Attack = false, Special = false, Boost = false }
+
+    yPos = players[p].YPos
+    hitstunType = players[p].HitstunType
+    kdTime = players[p].KnockdownTime
+    cancelAvailable = players[p].CancelType
+    
+    return string
+end
