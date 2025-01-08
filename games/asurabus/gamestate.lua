@@ -72,9 +72,6 @@ end
 function ParseFrameDataP1()
     sprTimeP1, sprFrameP1 = rw(players[1].SPRTime), rw(players[1].SPRFrame)
 
-    isCancellableP1 = rw(players[1].CanCancel)
-    DebugMessage = DebugMessage .. ". Cancel = " .. isCancellableP1
-
     local move_id = rws(players[1].AnimationID)
     local is_active = rws(players[1].AttackState) ~= 0
 
@@ -99,8 +96,6 @@ function ParseFrameDataP1()
             FrameDataOutput = "Move ID " .. currentAnim ..
                 ": S" .. startup .. " A" .. active .. " R" .. recovery .. " (T" ..
                 startup + active + recovery - 1 .. ") "
-            -- start the counter for frame advantage calc
-            framesSinceP1Actionable = 0
         end
         currentFrame, currentAnim = 1, move_id
         startup, active, recovery = -1, -1, -1
@@ -112,6 +107,13 @@ local function isFrozenP2()
     --return superFlash == 0x7 or hitstop ~= 0
 
     return (sprTimeP2 == prevTimeP2 and sprFrameP2 == prevFrameP2)
+end
+
+function CheckActionableP1()
+    actions = IsPlayerActionable(1)
+
+    local canAct = actions.Attack
+    isActionableP1 = canAct
 end
 
 function CheckActionableP2()
@@ -140,22 +142,35 @@ function CheckActionableP2()
         actString = " — STUNNED"
     end
 
-    DebugMessage = "Hitstun: " ..
-        hitstunP2 .. " | Hitstate: " .. hitStateP2 .. " | Anim: " .. animString .. actString
+    -- DebugMessage = "Hitstun: " ..
+    --    hitstunP2 .. " | Hitstate: " .. hitStateP2 .. " | Anim: " .. animString .. actString
     isActionableP2 = canAct
 end
 
 function ParseFrameAdv()
+    -- ParseFrameDataP2() doesn't exist yet, update sprite data here
     sprTimeP2, sprFrameP2 = rw(players[2].SPRTime), rw(players[2].SPRFrame)
+
+    if isActionableP1 then
+        -- p1 is actionable, increment the counter
+        if isFrozenP1() == false then
+            framesSinceP1Actionable = framesSinceP1Actionable + 1
+        end
+    else
+        -- reset the counter; not actionable
+        framesSinceP1Actionable = -1
+    end
+
     if isActionableP2 then
         -- p2 is actionable, increment the counter
         if isFrozenP2() == false then
             framesSinceP2Actionable = framesSinceP2Actionable + 1
         end
     else
-        -- p2 is not actionable, reset the counter
+        -- not actionable; reset the counter
         framesSinceP2Actionable = -1
     end
+
     if framesSinceP1Actionable ~= -1 and framesSinceP2Actionable ~= -1 then
         -- both actionable, substract for frame advantage
         formatAdvantage(framesSinceP1Actionable - framesSinceP2Actionable)
@@ -193,12 +208,63 @@ end
 
 function IsPlayerActionable(p)
     -- movement
-    actions = { Movement = false, Attack = false, Special = false, Boost = false }
+    actions = { Movement = true, Attack = true, Special = true, Boost = true }
 
-    yPos = players[p].YPos
-    hitstunType = players[p].HitstunType
-    kdTime = players[p].KnockdownTime
-    cancelAvailable = players[p].CancelType
-    
-    return string
+    hitstunType = rw(players[p].HitstunType)
+    kdTime = rw(players[p].KnockdownTime)
+    cancelAvailable = rw(players[p].CanCancel)
+    unused_3DE2 = rw(players[p].Unused_3DE2)
+    unused_3DE4 = rw(players[p].Unused_3DE4)
+    unused_3DEE = rw(players[p].Unused_3DEE)
+    inAirborneHitstun = rw(players[p].InAirborneHitstun)
+    launched = rw(players[p].IsLaunched)
+    usingSpecial = rw(players[p].IsUsingSpecial)
+    blockstun = rw(players[p].Blockstun)
+
+    -- combine these
+    ypos = rw(players[p].YPos) -- if > 0xD8
+    airActionable = rw(players[p].IsAirActionable) -- if true
+
+    DebugMessage = hitstunType .. kdTime .. cancelAvailable .. unused_3DE2 .. unused_3DE4 .. unused_3DEE
+    .. inAirborneHitstun .. launched .. usingSpecial .. blockstun .. ypos .. airActionable .. " | "
+
+    if hitstunType ~= 0 or kdTime ~= 0 or cancelAvailable == 1 or cancelAvailable == 3 or cancelAvailable == 4 or unused_3DE2 ~= 0 or unused_3DE4 ~= 0 or unused_3DEE ~= 0 or
+    inAirborneHitstun ~= 0 or launched ~= 0 or blockstun ~= 0 or (ypos > 0xD8 and airActionable == 0) then
+        actions.Movement = false
+        actions.Attack = false
+        actions.Special = false
+        actions.Boost = false
+    end
+
+    if usingSpecial ~= 0 then
+        actions.Movement = false
+        actions.Attack = false
+    end
+
+    DebugMessage = DebugMessage .. "Cancels: "
+    if actions.Movement then
+        DebugMessage = DebugMessage .. "M"
+    else
+        DebugMessage = DebugMessage .. "-"
+    end
+
+    if actions.Attack then
+        DebugMessage = DebugMessage .. "ABC"
+    else
+        DebugMessage = DebugMessage .. "---"
+    end
+
+    if actions.Special then
+        DebugMessage = DebugMessage .. "S"
+    else
+        DebugMessage = DebugMessage .. "-"
+    end
+
+    if actions.Boost then
+        DebugMessage = DebugMessage .. "U"
+    else
+        DebugMessage = DebugMessage .. "-"
+    end
+
+    return actions
 end

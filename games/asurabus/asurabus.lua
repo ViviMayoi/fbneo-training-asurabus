@@ -132,6 +132,7 @@ end
 
 function RunAfter() -- runs after every emulated frame
 	CheckActionableP2()
+	CheckActionableP1()
 	ParseFrameDataP1()
 	ParseFrameAdv()
 end
