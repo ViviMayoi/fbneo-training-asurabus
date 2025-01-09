@@ -112,7 +112,7 @@ end
 function CheckActionableP1()
     actions = IsPlayerActionable(1)
 
-    local canAct = actions.Attack
+    local canAct = actions.Movement
     isActionableP1 = canAct
 end
 
@@ -157,7 +157,7 @@ function ParseFrameAdv()
             framesSinceP1Actionable = framesSinceP1Actionable + 1
         end
     else
-        -- reset the counter; not actionable
+        -- not actionable; reset the counter
         framesSinceP1Actionable = -1
     end
 
@@ -171,23 +171,10 @@ function ParseFrameAdv()
         framesSinceP2Actionable = -1
     end
 
-    if framesSinceP1Actionable ~= -1 and framesSinceP2Actionable ~= -1 then
-        -- both actionable, substract for frame advantage
+    if isActionableP1 and isActionableP2 then
         formatAdvantage(framesSinceP1Actionable - framesSinceP2Actionable)
-        -- calculation made, reset p1's counter
-        framesSinceP1Actionable = -1
-    elseif framesSinceP1Actionable ~= -1 and framesSinceP2Actionable == -1 then
-        -- p1 is plus, waiting on p2
-        if isActionableP2 then
-            -- advantage is just P1's frame counter since P2's would equal 0
-            formatAdvantage(framesSinceP1Actionable)
-            -- reset the counter for next calc
-            framesSinceP1Actionable = -1
-        elseif isFrozenP1() == false then
-            -- increment
-            framesSinceP1Actionable = framesSinceP1Actionable + 1
-        end
     end
+
     DebugMessage = DebugMessage .. ". P1: " .. framesSinceP1Actionable .. ", P2: " .. framesSinceP2Actionable
 
     prevTimeP1, prevFrameP1, prevTimeP2, prevFrameP2 = sprTimeP1, sprFrameP1, sprTimeP2, sprFrameP2
@@ -208,7 +195,7 @@ end
 
 function IsPlayerActionable(p)
     -- movement
-    actions = { Movement = true, Attack = true, Special = true, Boost = true }
+    actions = { Movement = true, Attack = true, Special = true }
 
     hitstunType = rw(players[p].HitstunType)
     kdTime = rw(players[p].KnockdownTime)
@@ -220,20 +207,36 @@ function IsPlayerActionable(p)
     launched = rw(players[p].IsLaunched)
     usingSpecial = rw(players[p].IsUsingSpecial)
     blockstun = rw(players[p].Blockstun)
-
-    -- combine these
-    ypos = rw(players[p].YPos) -- if > 0xD8
+    ypos = rw(players[p].YPos)                     -- if > 0xD8
     airActionable = rw(players[p].IsAirActionable) -- if true
+    hitstun = rw(players[p].Hitstun)
+    kd1 = rw(players[p].IsKnockedDown1)
+    kd2 = rw(players[p].IsKnockedDown2)
+    actionLock = rw(players[p].ActionLock)
+    airOptions = rw(players[p].AirOptions)
+    lastMoveHit = rw(players[p].LastAttackConnected)
+    buttonStrength = rw(players[p].ButtonStrength)
+    dashing = rw(players[p].IsDashing)
+    groundMovement = rw(players[p].GroundMovementType)
 
-    DebugMessage = hitstunType .. kdTime .. cancelAvailable .. unused_3DE2 .. unused_3DE4 .. unused_3DEE
-    .. inAirborneHitstun .. launched .. usingSpecial .. blockstun .. ypos .. airActionable .. " | "
+    --DebugMessage = hitstunType .. kdTime .. cancelAvailable .. unused_3DE2 .. unused_3DE4 .. unused_3DEE
+    --    .. inAirborneHitstun .. launched .. usingSpecial .. blockstun .. ypos .. airActionable .. " | "
 
-    if hitstunType ~= 0 or kdTime ~= 0 or cancelAvailable == 1 or cancelAvailable == 3 or cancelAvailable == 4 or unused_3DE2 ~= 0 or unused_3DE4 ~= 0 or unused_3DEE ~= 0 or
-    inAirborneHitstun ~= 0 or launched ~= 0 or blockstun ~= 0 or (ypos > 0xD8 and airActionable == 0) then
+    DebugMessage = ""
+
+    if kdTime ~= 0 or cancelAvailable == 1 or unused_3DE2 ~= 0 or unused_3DE4 ~= 0 or unused_3DEE ~= 0
+        or inAirborneHitstun ~= 0 or launched ~= 0 or (ypos > 0xD8 and airActionable == 0) then
         actions.Movement = false
         actions.Attack = false
         actions.Special = false
-        actions.Boost = false
+    end
+
+    if (buttonStrength ~= 0 and cancelAvailable == 2 and lastMoveHit == 0) or (cancelAvailable ~= 0 and cancelAvailable ~= 2) then
+        actions.Attack = false
+    end
+
+    if (cancelAvailable ~= 0 and cancelAvailable ~= 3 and (cancelAvailable == 2 and lastMoveHit == 0)) then
+        actions.Special = false
     end
 
     if usingSpecial ~= 0 then
@@ -241,7 +244,20 @@ function IsPlayerActionable(p)
         actions.Attack = false
     end
 
-    DebugMessage = DebugMessage .. "Cancels: "
+    if hitstun ~= 0 then
+        actions.Movement = false
+        actions.Special = false
+    end
+
+    if hitstunType ~= 0 or blockstun ~= 0 then
+        actions.Attack = false
+    end
+
+    if 8 < blockstun or kd1 ~= 0 or kd2 ~= 0 or cancelAvailable == 5 or actionLock ~= 0 then
+        actions.Movement = false
+    end
+
+    DebugMessage = DebugMessage .. "Options: "
     if actions.Movement then
         DebugMessage = DebugMessage .. "M"
     else
@@ -249,19 +265,32 @@ function IsPlayerActionable(p)
     end
 
     if actions.Attack then
-        DebugMessage = DebugMessage .. "ABC"
+        if (ypos == 0xD8 or bit.band(airOptions, 0xF) ~= 0) and buttonStrength == 0 then
+            DebugMessage = DebugMessage .. "A"
+        else
+            DebugMessage = DebugMessage .. "-"
+        end
+        if (ypos == 0xD8 or bit.band(airOptions, 0xF0) ~= 0) and buttonStrength == 0 then
+            DebugMessage = DebugMessage .. "B"
+        else
+            DebugMessage = DebugMessage .. "-"
+        end
+        if (ypos == 0xD8 or bit.band(airOptions, 0xF00) ~= 0) and buttonStrength <= 2 then
+            DebugMessage = DebugMessage .. "C"
+        else
+            DebugMessage = DebugMessage .. "-"
+        end
+        if (ypos == 0xD8 or bit.band(airOptions, 0xF000) ~= 0) and buttonStrength <= 4 then
+            DebugMessage = DebugMessage .. "L"
+        else
+            DebugMessage = DebugMessage .. "-"
+        end
     else
-        DebugMessage = DebugMessage .. "---"
+        DebugMessage = DebugMessage .. "----"
     end
 
     if actions.Special then
         DebugMessage = DebugMessage .. "S"
-    else
-        DebugMessage = DebugMessage .. "-"
-    end
-
-    if actions.Boost then
-        DebugMessage = DebugMessage .. "U"
     else
         DebugMessage = DebugMessage .. "-"
     end
