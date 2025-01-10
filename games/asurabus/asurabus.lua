@@ -1,5 +1,4 @@
 assert(rb, "Run fbneo-training-mode.lua")
-require("/games/asurabus/gamestate")
 
 local rb, rbs, rw, rws, rd = memory.readbyte, memory.readbytesigned, memory.readword, memory.readwordsigned,
 	memory.readdword

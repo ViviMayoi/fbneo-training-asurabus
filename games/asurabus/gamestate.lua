@@ -1,5 +1,6 @@
 require("/games/asurabus/constants")
 require("/games/asurabus/memory_addresses")
+require("/games/asurabus/asurabus")
 
 local rb, rbs, rw, rws, rd = memory.readbyte, memory.readbytesigned, memory.readword, memory.readwordsigned,
     memory.readdword
@@ -38,28 +39,6 @@ local function formatAdvantage(adv)
     end
 end
 
-local function checkAnimStun(id)
-    for _, v in pairs(ANIMATIONS_STUN) do
-        if v == id then
-            -- Animation matches hit, block, knockdown, or wakeup animation
-            return true
-        end
-    end
-    -- No match
-    return false
-end
-
-local function checkWakeUp(id)
-    for _, v in pairs(ANIMATIONS_WAKEUP) do
-        if v == id then
-            -- Animation matches wakeup animation
-            return true
-        end
-    end
-    -- No match
-    return false
-end
-
 function CheckHitstun()
     hitstunP1 = rw(players[1].Hitstun)
     hitstunP2 = rw(players[2].Hitstun)
@@ -73,7 +52,7 @@ function ParseFrameDataP1()
     sprTimeP1, sprFrameP1 = rw(players[1].SPRTime), rw(players[1].SPRFrame)
 
     local move_id = rws(players[1].AnimationID)
-    local is_active = rws(players[1].AttackState) ~= 0
+    local is_active = (rws(players[1].AttackState) ~= 0) or ProjectileActiveP1
 
     if move_id == currentAnim then
         if isFrozenP1() == false then
@@ -117,33 +96,9 @@ function CheckActionableP1()
 end
 
 function CheckActionableP2()
-    local anim = rws(players[2].AnimationID)
-    --hitStateP2 = rws(players[2].HitState)
-    --blockstun = rws(players[2].Blockstun)
-    local animPrev = rws(players[2].PrevAnimID)
-    local animStun = checkAnimStun(anim)
-    local wakeup = checkWakeUp(animPrev)
+    actions = IsPlayerActionable(2)
 
-    local animString;
-    local actString;
-    --
-    if animStun then
-        animString = anim .. "Y"
-    elseif wakeup then
-        animString = anim .. "W" .. animPrev
-    else
-        animString = anim .. "N"
-    end
-
-    local canAct = (hitstunP2 ~= 0 or animStun or wakeup) == false
-    if canAct then
-        actString = " — ACTIONABLE"
-    else
-        actString = " — STUNNED"
-    end
-
-    -- DebugMessage = "Hitstun: " ..
-    --    hitstunP2 .. " | Hitstate: " .. hitStateP2 .. " | Anim: " .. animString .. actString
+    local canAct = actions.Movement
     isActionableP2 = canAct
 end
 
@@ -180,19 +135,6 @@ function ParseFrameAdv()
     prevTimeP1, prevFrameP1, prevTimeP2, prevFrameP2 = sprTimeP1, sprFrameP1, sprTimeP2, sprFrameP2
 end
 
--- function DamageCalc(damage, hitCount)
---     damage = ((damage * 32) & 0xFFFF) >> 5 -- shave off excess bits;  >> 5 is effectively dividing by 32
-
---     if hitCount > 11 then
---         hitCount = 11
---     end
-
---     DamageTable = {0x20, 0x1A, 0x14, 0x10, 0x0C, 0x0A, 0x08, 0x06, 0x05, 0x04, 0x02, 0x01}
---     modifier = DamageTable[hitCount + 1]
-
---     damage = ((damage * modifier) & 0xFFFF) >> 5
--- end
-
 function IsPlayerActionable(p)
     -- movement
     actions = { Movement = true, Attack = true, Special = true }
@@ -200,11 +142,11 @@ function IsPlayerActionable(p)
     hitstunType = rw(players[p].HitstunType)
     kdTime = rw(players[p].KnockdownTime)
     cancelAvailable = rw(players[p].CanCancel)
-    unused_3DE2 = rw(players[p].Unused_3DE2)
-    unused_3DE4 = rw(players[p].Unused_3DE4)
-    unused_3DEE = rw(players[p].Unused_3DEE)
+    unused_3DE2 = rw(players[p].Unused_2)
+    unused_3DE4 = rw(players[p].Unused_4)
+    unused_3DEE = rw(players[p].Unused_E)
     inAirborneHitstun = rw(players[p].InAirborneHitstun)
-    launched = rw(players[p].IsLaunched)
+    inHitstun = rw(players[p].InHitstun)
     usingSpecial = rw(players[p].IsUsingSpecial)
     blockstun = rw(players[p].Blockstun)
     ypos = rw(players[p].YPos)                     -- if > 0xD8
@@ -216,8 +158,6 @@ function IsPlayerActionable(p)
     airOptions = rw(players[p].AirOptions)
     lastMoveHit = rw(players[p].LastAttackConnected)
     buttonStrength = rw(players[p].ButtonStrength)
-    dashing = rw(players[p].IsDashing)
-    groundMovement = rw(players[p].GroundMovementType)
 
     --DebugMessage = hitstunType .. kdTime .. cancelAvailable .. unused_3DE2 .. unused_3DE4 .. unused_3DEE
     --    .. inAirborneHitstun .. launched .. usingSpecial .. blockstun .. ypos .. airActionable .. " | "
@@ -225,7 +165,7 @@ function IsPlayerActionable(p)
     DebugMessage = ""
 
     if kdTime ~= 0 or cancelAvailable == 1 or unused_3DE2 ~= 0 or unused_3DE4 ~= 0 or unused_3DEE ~= 0
-        or inAirborneHitstun ~= 0 or launched ~= 0 or (ypos > 0xD8 and airActionable == 0) then
+        or inAirborneHitstun ~= 0 or inHitstun ~= 0 or (ypos > 0xD8 and airActionable == 0) then
         actions.Movement = false
         actions.Attack = false
         actions.Special = false
@@ -297,3 +237,16 @@ function IsPlayerActionable(p)
 
     return actions
 end
+
+-- function DamageCalc(damage, hitCount)
+--     damage = ((damage * 32) & 0xFFFF) >> 5 -- shave off excess bits;  >> 5 is effectively dividing by 32
+
+--     if hitCount > 11 then
+--         hitCount = 11
+--     end
+
+--     DamageTable = {0x20, 0x1A, 0x14, 0x10, 0x0C, 0x0A, 0x08, 0x06, 0x05, 0x04, 0x02, 0x01}
+--     modifier = DamageTable[hitCount + 1]
+
+--     damage = ((damage * modifier) & 0xFFFF) >> 5
+-- end
