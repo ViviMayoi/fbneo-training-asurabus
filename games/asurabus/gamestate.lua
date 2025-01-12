@@ -7,6 +7,8 @@ local rb, rbs, rw, rws, rd = memory.readbyte, memory.readbytesigned, memory.read
 
 local currentAnim = 0x00;
 local currentFrame = -1;
+local prevAnimP1 = 0x00;
+
 local startup = -1;
 local active = -1;
 local recovery = -1;
@@ -51,7 +53,7 @@ local function formatAdvantage(adv)
 end
 
 local function isFrozenP1()
-    return (sprTimeP1 == prevTimeP1 and sprFrameP1 == prevFrameP1)
+    return (sprTimeP1 == prevTimeP1 and sprFrameP1 == prevFrameP1 and currentAnim == prevAnimP1)
 end
 
 function ParseFrameDataP1()
@@ -163,7 +165,7 @@ function ParseFrameAdv()
 
     DebugMessage = DebugMessage .. ". P1: " .. framesSinceP1Actionable .. ", P2: " .. framesSinceP2Actionable
 
-    prevTimeP1, prevFrameP1, prevTimeP2, prevFrameP2 = sprTimeP1, sprFrameP1, sprTimeP2, sprFrameP2
+    prevTimeP1, prevFrameP1, prevAnimP1, prevTimeP2, prevFrameP2 = sprTimeP1, sprFrameP1, currentAnim, sprTimeP2, sprFrameP2
 end
 
 function IsPlayerActionable(p)
