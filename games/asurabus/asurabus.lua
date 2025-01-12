@@ -126,7 +126,6 @@ end
 function RunBefore() -- runs before every frame
 	infiniteTime()
 	secretCharacters()
-	CheckHitstun()
 end
 
 function RunAfter() -- runs after every emulated frame
@@ -137,7 +136,7 @@ function RunAfter() -- runs after every emulated frame
 end
 
 function Run() -- runs on every displayed frame
-	gui.text(10, 230, FrameDataOutput .. Advantage .. " [" .. NowActive .. "]");
+	gui.text(10, 230, FrameDataOutput .. Advantage .. " [" .. formatHex(NowActive) .. "]");
 	gui.text(4, 4, DebugMessage)
 end
 

@@ -10,8 +10,10 @@ local currentFrame = -1;
 local startup = -1;
 local active = -1;
 local recovery = -1;
+local activeStr = ""
+local lastHitStartFrame = -2
+local lastHitEndFrame = -1
 
-local isCancellableP1 = 0;
 local isActionableP1 = true
 local framesSinceP1Actionable = -1
 local sprTimeP1 = -1;
@@ -19,11 +21,8 @@ local sprFrameP1 = -1;
 local prevFrameP1 = -1;
 local prevTimeP1 = -1;
 
-local is
 local isActionableP2 = true
 local framesSinceP2Actionable = -1
-local hitstunP2 = 0;
-local hitStateP2 = 0;
 local sprTimeP2 = -1;
 local sprFrameP2 = -1;
 local prevFrameP2 = -1;
@@ -31,17 +30,24 @@ local prevTimeP2 = -1;
 
 Advantage = ""
 
+function formatHex(x)
+    return string.upper(string.format("%02x", x))
+end
+
+local function formatActiveString()
+    if activeStr ~= "" then
+        activeStr = activeStr .. ", " .. lastHitStartFrame .. "-" .. lastHitEndFrame
+    else
+        activeStr = lastHitStartFrame .. "-" .. lastHitEndFrame
+    end
+end
+
 local function formatAdvantage(adv)
     if adv > 0 then
         Advantage = " +" .. adv
     else
         Advantage = " " .. adv
     end
-end
-
-function CheckHitstun()
-    hitstunP1 = rw(players[1].Hitstun)
-    hitstunP2 = rw(players[2].Hitstun)
 end
 
 local function isFrozenP1()
@@ -66,19 +72,44 @@ function ParseFrameDataP1()
                     startup = currentFrame + 1
                 end
             end
+            -- manage gaps in active frames
+            if lastHitEndFrame < currentFrame and lastHitStartFrame < lastHitEndFrame then
+                if isFrozenP1() == false then
+                    lastHitStartFrame = currentFrame
+                else
+                    lastHitStartFrame = currentFrame + 1
+                end
+            end
             active = currentFrame - startup + 1
+        else
+            -- not currently active, add active period to activeStr
+            if lastHitStartFrame > lastHitEndFrame then
+                -- not active anymore, use previous currentFrame value
+                if isFrozenP1() == false then
+                    lastHitEndFrame = currentFrame - 1
+                else
+                    lastHitEndFrame = currentFrame
+                end
+                formatActiveString()
+            end
         end
     else
         if startup ~= -1 then
+            -- manage any hanging active periods
+            if lastHitStartFrame > lastHitEndFrame then
+                lastHitEndFrame = currentFrame
+                formatActiveString()
+            end
             recovery = currentFrame - ((startup - 1) + active)
-            -- +1 because using first active for startup
-            FrameDataOutput = "Move ID " .. currentAnim ..
-                ": S" .. startup .. " A" .. active .. " R" .. recovery .. " (T" ..
+            -- -1 because using first active for startup
+            FrameDataOutput = "Move ID " .. formatHex(currentAnim) ..
+                ": S" .. startup .. " A" .. active .. "(" .. activeStr .. ") R" .. recovery .. " (T" ..
                 startup + active + recovery - 1 .. ") "
         end
-        currentFrame, currentAnim = 1, move_id
-        startup, active, recovery = -1, -1, -1
+        currentFrame, currentAnim, startup, active, recovery, activeStr, lastHitStartFrame, lastHitEndFrame = 1, move_id,
+            -1, -1, -1, "", -2, -1
     end
+    DebugMessage = DebugMessage .. " - S" .. lastHitStartFrame .. "E" .. lastHitEndFrame .. " | " .. activeStr
     NowActive = move_id
 end
 
@@ -237,16 +268,3 @@ function IsPlayerActionable(p)
 
     return actions
 end
-
--- function DamageCalc(damage, hitCount)
---     damage = ((damage * 32) & 0xFFFF) >> 5 -- shave off excess bits;  >> 5 is effectively dividing by 32
-
---     if hitCount > 11 then
---         hitCount = 11
---     end
-
---     DamageTable = {0x20, 0x1A, 0x14, 0x10, 0x0C, 0x0A, 0x08, 0x06, 0x05, 0x04, 0x02, 0x01}
---     modifier = DamageTable[hitCount + 1]
-
---     damage = ((damage * modifier) & 0xFFFF) >> 5
--- end
