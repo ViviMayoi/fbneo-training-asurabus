@@ -132,17 +132,20 @@ function RunAfter() -- runs after every emulated frame
 	CheckActionableP2()
 	CheckActionableP1()
 	ParseFrameDataP1()
+	ParseProjectileDataP1()
 	ParseFrameAdv()
 end
 
 function Run() -- runs on every displayed frame
 	gui.text(10, 230, FrameDataOutput .. Advantage .. " [" .. formatHex(NowActive) .. "]");
+	gui.text(10, 215, ProjectileDataOutput);
 	gui.text(4, 4, DebugMessage)
 end
 
 emu.registerstart(function()
 	NowActive = 0
 	FrameDataOutput = "N/A";
+	ProjectileDataOutput = "N/A";
 	DebugMessage = "How did you see this?"
 	memory.registerread(0x402C2A, 2, function()
 		MuteMusic()

@@ -16,6 +16,12 @@ local activeStr = ""
 local lastHitStartFrame = -2
 local lastHitEndFrame = -1
 
+local projectileStartup = -1
+local projectileActiveTime = -1
+local projectileAnimLength = -1
+local projectileFrame = -1
+local projectileMoveID = -1
+
 local isActionableP1 = true
 local framesSinceP1Actionable = -1
 local sprTimeP1 = -1;
@@ -50,122 +56,6 @@ local function formatAdvantage(adv)
     else
         Advantage = " " .. adv
     end
-end
-
-local function isFrozenP1()
-    return (sprTimeP1 == prevTimeP1 and sprFrameP1 == prevFrameP1 and currentAnim == prevAnimP1)
-end
-
-function ParseFrameDataP1()
-    sprTimeP1, sprFrameP1 = rw(players[1].SPRTime), rw(players[1].SPRFrame)
-
-    local move_id = rws(players[1].AnimationID)
-    local is_active = (rws(players[1].AttackState) ~= 0) or ProjectileActiveP1
-
-    if move_id == currentAnim then
-        if isFrozenP1() == false then
-            currentFrame = currentFrame + 1
-        end
-        if is_active then
-            if startup == -1 then
-                if isFrozenP1() == false then
-                    startup = currentFrame
-                else
-                    startup = currentFrame + 1
-                end
-            end
-            -- manage gaps in active frames
-            if lastHitEndFrame < currentFrame and lastHitStartFrame < lastHitEndFrame then
-                if isFrozenP1() == false then
-                    lastHitStartFrame = currentFrame
-                else
-                    lastHitStartFrame = currentFrame + 1
-                end
-            end
-            active = currentFrame - startup + 1
-        else
-            -- not currently active, add active period to activeStr
-            if lastHitStartFrame > lastHitEndFrame then
-                -- not active anymore, use previous currentFrame value
-                if isFrozenP1() == false then
-                    lastHitEndFrame = currentFrame - 1
-                else
-                    lastHitEndFrame = currentFrame
-                end
-                formatActiveString()
-            end
-        end
-    else
-        if startup ~= -1 then
-            -- manage any hanging active periods
-            if lastHitStartFrame > lastHitEndFrame then
-                lastHitEndFrame = currentFrame
-                formatActiveString()
-            end
-            recovery = currentFrame - ((startup - 1) + active)
-            -- -1 because using first active for startup
-            FrameDataOutput = "Move ID " .. formatHex(currentAnim) ..
-                ": S" .. startup .. " A" .. active .. "(" .. activeStr .. ") R" .. recovery .. " (T" ..
-                startup + active + recovery - 1 .. ") "
-        end
-        currentFrame, currentAnim, startup, active, recovery, activeStr, lastHitStartFrame, lastHitEndFrame = 1, move_id,
-            -1, -1, -1, "", -2, -1
-    end
-    DebugMessage = DebugMessage .. " - S" .. lastHitStartFrame .. "E" .. lastHitEndFrame .. " | " .. activeStr
-    NowActive = move_id
-end
-
-local function isFrozenP2()
-    --return superFlash == 0x7 or hitstop ~= 0
-
-    return (sprTimeP2 == prevTimeP2 and sprFrameP2 == prevFrameP2)
-end
-
-function CheckActionableP1()
-    actions = IsPlayerActionable(1)
-
-    local canAct = actions.Movement
-    isActionableP1 = canAct
-end
-
-function CheckActionableP2()
-    actions = IsPlayerActionable(2)
-
-    local canAct = actions.Movement
-    isActionableP2 = canAct
-end
-
-function ParseFrameAdv()
-    -- ParseFrameDataP2() doesn't exist yet, update sprite data here
-    sprTimeP2, sprFrameP2 = rw(players[2].SPRTime), rw(players[2].SPRFrame)
-
-    if isActionableP1 then
-        -- p1 is actionable, increment the counter
-        if isFrozenP1() == false then
-            framesSinceP1Actionable = framesSinceP1Actionable + 1
-        end
-    else
-        -- not actionable; reset the counter
-        framesSinceP1Actionable = -1
-    end
-
-    if isActionableP2 then
-        -- p2 is actionable, increment the counter
-        if isFrozenP2() == false then
-            framesSinceP2Actionable = framesSinceP2Actionable + 1
-        end
-    else
-        -- not actionable; reset the counter
-        framesSinceP2Actionable = -1
-    end
-
-    if isActionableP1 and isActionableP2 then
-        formatAdvantage(framesSinceP1Actionable - framesSinceP2Actionable)
-    end
-
-    DebugMessage = DebugMessage .. ". P1: " .. framesSinceP1Actionable .. ", P2: " .. framesSinceP2Actionable
-
-    prevTimeP1, prevFrameP1, prevAnimP1, prevTimeP2, prevFrameP2 = sprTimeP1, sprFrameP1, currentAnim, sprTimeP2, sprFrameP2
 end
 
 function IsPlayerActionable(p)
@@ -269,4 +159,150 @@ function IsPlayerActionable(p)
     end
 
     return actions
+end
+
+local function isFrozenP1()
+    return (sprTimeP1 == prevTimeP1 and sprFrameP1 == prevFrameP1 and currentAnim == prevAnimP1)
+end
+
+function ParseFrameDataP1()
+    sprTimeP1, sprFrameP1 = rw(players[1].SPRTime), rw(players[1].SPRFrame)
+
+    local move_id = rws(players[1].AnimationID)
+    local is_active = (rws(players[1].AttackState) ~= 0)
+
+    if move_id == currentAnim then
+        if isFrozenP1() == false then
+            currentFrame = currentFrame + 1
+        end
+        if is_active then
+            if startup == -1 then
+                if isFrozenP1() == false then
+                    startup = currentFrame
+                else
+                    startup = currentFrame + 1
+                end
+            end
+            -- manage gaps in active frames
+            if lastHitEndFrame < currentFrame and lastHitStartFrame < lastHitEndFrame then
+                if isFrozenP1() == false then
+                    lastHitStartFrame = currentFrame
+                else
+                    lastHitStartFrame = currentFrame + 1
+                end
+            end
+            active = currentFrame - startup + 1
+        else
+            -- not currently active, add active period to activeStr
+            if lastHitStartFrame > lastHitEndFrame then
+                -- not active anymore, use previous currentFrame value
+                if isFrozenP1() == false then
+                    lastHitEndFrame = currentFrame - 1
+                else
+                    lastHitEndFrame = currentFrame
+                end
+                formatActiveString()
+            end
+        end
+    else
+        if startup ~= -1 then
+            -- manage any hanging active periods
+            if lastHitStartFrame > lastHitEndFrame then
+                lastHitEndFrame = currentFrame
+                formatActiveString()
+            end
+            recovery = currentFrame - ((startup - 1) + active)
+            -- -1 because using first active for startup
+            FrameDataOutput = "Move ID " .. formatHex(currentAnim) ..
+                ": S" .. startup .. " A" .. active .. "(" .. activeStr .. ") R" .. recovery .. " (T" ..
+                startup + active + recovery - 1 .. ") "
+        end
+        currentFrame, currentAnim, startup, active, recovery, activeStr, lastHitStartFrame, lastHitEndFrame = 1, move_id,
+            -1, -1, -1, "", -2, -1
+    end
+    DebugMessage = DebugMessage .. " - S" .. lastHitStartFrame .. "E" .. lastHitEndFrame .. " | " .. activeStr
+    NowActive = move_id
+end
+
+function ParseProjectileDataP1()
+    local move_id = rws(players[1].AnimationID)
+
+    if ProjectileActiveP1 then
+        if projectileStartup == -1 then
+            -- new projectile
+            projectileFrame = currentFrame - 1 -- ProjectileActiveP1 is fetched during hitbox parsing, which happens later so is 1f late
+            projectileStartup = projectileFrame
+            projectileMoveID = move_id
+        else
+            -- check if spawning move still ongoing
+            if projectileMoveID == move_id then
+                projectileAnimLength = projectileFrame - (startup - 1)
+            end
+            if isFrozenP1() == false then
+                projectileFrame = projectileFrame + 1
+            end
+        end
+        projectileActiveTime = (projectileFrame - projectileStartup) + 1
+    else
+        if projectileStartup ~= -1 then
+            -- format projectile string
+            ProjectileDataOutput = "S" ..
+            projectileStartup .. "f A" .. projectileActiveTime .. "f - Anim: " .. projectileAnimLength .. "f total"
+            projectileStartup, projectileFrame, projectileActiveTime = -1, -1, -1
+        end
+    end
+end
+
+local function isFrozenP2()
+    --return superFlash == 0x7 or hitstop ~= 0
+
+    return (sprTimeP2 == prevTimeP2 and sprFrameP2 == prevFrameP2)
+end
+
+function CheckActionableP1()
+    actions = IsPlayerActionable(1)
+
+    local canAct = actions.Movement
+    isActionableP1 = canAct
+end
+
+function CheckActionableP2()
+    actions = IsPlayerActionable(2)
+
+    local canAct = actions.Movement
+    isActionableP2 = canAct
+end
+
+function ParseFrameAdv()
+    -- ParseFrameDataP2() doesn't exist yet, update sprite data here
+    sprTimeP2, sprFrameP2 = rw(players[2].SPRTime), rw(players[2].SPRFrame)
+
+    if isActionableP1 then
+        -- p1 is actionable, increment the counter
+        if isFrozenP1() == false then
+            framesSinceP1Actionable = framesSinceP1Actionable + 1
+        end
+    else
+        -- not actionable; reset the counter
+        framesSinceP1Actionable = -1
+    end
+
+    if isActionableP2 then
+        -- p2 is actionable, increment the counter
+        if isFrozenP2() == false then
+            framesSinceP2Actionable = framesSinceP2Actionable + 1
+        end
+    else
+        -- not actionable; reset the counter
+        framesSinceP2Actionable = -1
+    end
+
+    if isActionableP1 and isActionableP2 then
+        formatAdvantage(framesSinceP1Actionable - framesSinceP2Actionable)
+    end
+
+    DebugMessage = DebugMessage .. ". P1: " .. framesSinceP1Actionable .. ", P2: " .. framesSinceP2Actionable
+
+    prevTimeP1, prevFrameP1, prevAnimP1, prevTimeP2, prevFrameP2 = sprTimeP1, sprFrameP1, currentAnim, sprTimeP2,
+        sprFrameP2
 end
