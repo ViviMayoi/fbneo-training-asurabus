@@ -58,6 +58,12 @@ local function formatAdvantage(adv)
     end
 end
 
+local function isNeutralFrame(p)
+    local move_id = rws(players[p].AnimationID)
+
+    return ANIMATIONS_NFRAME[move_id] and (isActionableP1 == false)
+end
+
 function IsPlayerActionable(p)
     -- movement
     actions = { Movement = true, Attack = true, Special = true }
@@ -171,7 +177,7 @@ function ParseFrameDataP1()
     local move_id = rws(players[1].AnimationID)
     local is_active = (rws(players[1].AttackState) ~= 0)
 
-    if move_id == currentAnim then
+    if move_id == currentAnim or isNeutralFrame(1) then
         if isFrozenP1() == false then
             currentFrame = currentFrame + 1
         end
@@ -230,25 +236,36 @@ function ParseProjectileDataP1()
     if ProjectileActiveP1 then
         if projectileStartup == -1 then
             -- new projectile
-            projectileFrame = currentFrame - 1 -- ProjectileActiveP1 is fetched during hitbox parsing, which happens later so is 1f late
+            projectileFrame = currentFrame -
+                1 -- ProjectileActiveP1 is fetched during hitbox parsing, which happens later so is 1f late
             projectileStartup = projectileFrame
             projectileMoveID = move_id
         else
-            -- check if spawning move still ongoing
-            if projectileMoveID == move_id then
-                projectileAnimLength = projectileFrame - (startup - 1)
-            end
             if isFrozenP1() == false then
                 projectileFrame = projectileFrame + 1
+            end
+            -- check if spawning move still ongoing
+            if projectileMoveID == move_id or isNeutralFrame(1) then
+                projectileAnimLength = projectileFrame - (startup - 1)
             end
         end
         projectileActiveTime = (projectileFrame - projectileStartup) + 1
     else
-        if projectileStartup ~= -1 then
-            -- format projectile string
-            ProjectileDataOutput = "S" ..
-            projectileStartup .. "f A" .. projectileActiveTime .. "f - Anim: " .. projectileAnimLength .. "f total"
-            projectileStartup, projectileFrame, projectileActiveTime = -1, -1, -1
+        -- check if spawning move still ongoing
+        if projectileMoveID == move_id or isNeutralFrame(1) then
+            if isFrozenP1 then
+                projectileFrame = projectileFrame + 1
+            end
+            projectileAnimLength = projectileFrame - (startup - 1)
+        else
+            if projectileStartup ~= -1 then
+                -- format projectile string
+                ProjectileDataOutput = "S" ..
+                    projectileStartup ..
+                    "f A" .. projectileActiveTime .. "f - Anim: " .. projectileAnimLength .. "f total"
+                projectileStartup, projectileFrame, projectileActiveTime, projectileAnimLength, projectileMoveID = -1, -1,
+                    -1, -1, -1
+            end
         end
     end
 end
