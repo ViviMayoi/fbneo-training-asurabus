@@ -5,48 +5,104 @@ require("/games/asurabus/asurabus")
 local rb, rbs, rw, rws, rd = memory.readbyte, memory.readbytesigned, memory.readword, memory.readwordsigned,
     memory.readdword
 
-local currentAnim = 0x00;
-local currentFrame = -1;
-local prevAnimP1 = 0x00;
+local playerState = {
+    {
+        CurrentAnimation = 0x00,
+        CurrentFrame = -1,
+        PrevAnimation = 0x00,
+        Startup = -1,
+        Active = -1,
+        Recovery = -1,
+        ActiveString = "",
+        LastHitStartFrame = -2,
+        LastHitEndFrame = -1,
+        ProjStartup = -1,
+        ProjActiveTime = -1,
+        ProjAnimLength = -1,
+        ProjFrame = -1,
+        ProjMoveID = -1,
+        ProjActive = false,
 
-local startup = -1;
-local active = -1;
-local recovery = -1;
-local activeStr = ""
-local lastHitStartFrame = -2
-local lastHitEndFrame = -1
+        IsActionable = true,
+        FramesSinceActionable = -1,
+        SprTime = -1,
+        SprFrame = -1,
+        PrevFrame = -1,
+        PrevTime = -1,
 
-local projectileStartup = -1
-local projectileActiveTime = -1
-local projectileAnimLength = -1
-local projectileFrame = -1
-local projectileMoveID = -1
+        NowActive = 0x00
+    },
 
-local isActionableP1 = true
-local framesSinceP1Actionable = -1
-local sprTimeP1 = -1;
-local sprFrameP1 = -1;
-local prevFrameP1 = -1;
-local prevTimeP1 = -1;
+    {
+        CurrentAnimation = 0x00,
+        CurrentFrame = -1,
+        PrevAnimation = 0x00,
+        Startup = -1,
+        Active = -1,
+        Recovery = -1,
+        ActiveString = "",
+        LastHitStartFrame = -2,
+        LastHitEndFrame = -1,
+        ProjStartup = -1,
+        ProjActiveTime = -1,
+        ProjAnimLength = -1,
+        ProjFrame = -1,
+        ProjMoveID = -1,
+        ProjActive = false,
 
-local isActionableP2 = true
-local framesSinceP2Actionable = -1
-local sprTimeP2 = -1;
-local sprFrameP2 = -1;
-local prevFrameP2 = -1;
-local prevTimeP2 = -1;
+        IsActionable = true,
+        FramesSinceActionable = -1,
+        SprTime = -1,
+        SprFrame = -1,
+        PrevFrame = -1,
+        PrevTime = -1,
+
+        NowActive = 0x00
+    }
+}
 
 Advantage = ""
+
+function CheckForActiveProjectiles(p)
+    for i = 0, 31, 1 do
+        local On   = rbs(players[p].pOn + (i * 0x10))
+        local Type = rbs(players[p].pType + (i * 0x10))
+        local ID   = rws(players[p].pID + (i * 0x10))
+        local Time = rbs(players[p].pTime + (i * 0x10))
+        local Hit  = rbs(players[p].pHit + (i * 0x10))
+
+        if (On > 0 and Type > 0 and Hit == 1) then
+            local skipProjectile = false;
+            -- extra checks for ＳＰＥＣＩＡＬ ＣＡＳＥＳ 🫠
+            if (players[p].Character == ALICE_HIDDEN) then
+                if (ID == 92 and Time > 60) then                                  -- skip 214X inactive frames
+                    skipProjectile = true;
+                elseif ((ID == 51 or ID == 95) and (Time < 13 or Time > 21)) then -- 623X is only active on frames 13 to 21 of being on screen
+                    skipProjectile = true;
+                elseif (ID == 94 and (Time < 19 or Time > 27)) then               -- 623EX and boost 623C final hits are only active on frames 19 to 27 of being on screen
+                    skipProjectile = true;
+                end
+            elseif (ID == 15) then -- Zam-B 236X ground puddle
+                skipProjectile = true;
+            end
+            if (skipProjectile == false) then
+                return true
+            end
+        end
+    end
+    return false
+end
 
 function formatHex(x)
     return string.upper(string.format("%02x", x))
 end
 
-local function formatActiveString()
-    if activeStr ~= "" then
-        activeStr = activeStr .. ", " .. lastHitStartFrame .. "-" .. lastHitEndFrame
+local function formatActiveString(p)
+    if playerState[p].ActiveString ~= "" then
+        playerState[p].ActiveString = playerState[p].ActiveString ..
+            ", " .. playerState[p].LastHitStartFrame .. "-" .. playerState[p].LastHitEndFrame
     else
-        activeStr = lastHitStartFrame .. "-" .. lastHitEndFrame
+        playerState[p].ActiveString = playerState[p].LastHitStartFrame .. "-" .. playerState[p].LastHitEndFrame
     end
 end
 
@@ -61,7 +117,15 @@ end
 local function isNeutralFrame(p)
     local move_id = rws(players[p].AnimationID)
 
-    return ANIMATIONS_NFRAME[move_id] and (isActionableP1 == false)
+    local i = 0
+    local contains = false
+
+    repeat
+        if (ANIMATIONS_NFRAME[i] == move_id) then contains = true end
+        i = i + 1
+    until (i == #ANIMATIONS_NFRAME)
+
+    return contains and playerState[p].IsActionable == false
 end
 
 function IsPlayerActionable(p)
@@ -87,11 +151,6 @@ function IsPlayerActionable(p)
     airOptions = rw(players[p].AirOptions)
     lastMoveHit = rw(players[p].LastAttackConnected)
     buttonStrength = rw(players[p].ButtonStrength)
-
-    --DebugMessage = hitstunType .. kdTime .. cancelAvailable .. unused_3DE2 .. unused_3DE4 .. unused_3DEE
-    --    .. inAirborneHitstun .. launched .. usingSpecial .. blockstun .. ypos .. airActionable .. " | "
-
-    DebugMessage = ""
 
     if kdTime ~= 0 or cancelAvailable == 1 or unused_3DE2 ~= 0 or unused_3DE4 ~= 0 or unused_3DEE ~= 0
         or inAirborneHitstun ~= 0 or inHitstun ~= 0 or (ypos > 0xD8 and airActionable == 0) then
@@ -126,200 +185,199 @@ function IsPlayerActionable(p)
         actions.Movement = false
     end
 
-    DebugMessage = DebugMessage .. "Options: "
-    if actions.Movement then
-        DebugMessage = DebugMessage .. "M"
-    else
-        DebugMessage = DebugMessage .. "-"
-    end
+    if p == 1 then
+        DebugMessage = "Options: "
+        if actions.Movement then
+            DebugMessage = DebugMessage .. "M"
+        else
+            DebugMessage = DebugMessage .. "-"
+        end
 
-    if actions.Attack then
-        if (ypos == 0xD8 or bit.band(airOptions, 0xF) ~= 0) and buttonStrength == 0 then
-            DebugMessage = DebugMessage .. "A"
+        if actions.Attack then
+            if (ypos == 0xD8 or bit.band(airOptions, 0xF) ~= 0) and buttonStrength == 0 then
+                DebugMessage = DebugMessage .. "A"
+            else
+                DebugMessage = DebugMessage .. "-"
+            end
+            if (ypos == 0xD8 or bit.band(airOptions, 0xF0) ~= 0) and buttonStrength == 0 then
+                DebugMessage = DebugMessage .. "B"
+            else
+                DebugMessage = DebugMessage .. "-"
+            end
+            if (ypos == 0xD8 or bit.band(airOptions, 0xF00) ~= 0) and buttonStrength <= 2 then
+                DebugMessage = DebugMessage .. "C"
+            else
+                DebugMessage = DebugMessage .. "-"
+            end
+            if (ypos == 0xD8 or bit.band(airOptions, 0xF000) ~= 0) and buttonStrength <= 4 then
+                DebugMessage = DebugMessage .. "L"
+            else
+                DebugMessage = DebugMessage .. "-"
+            end
         else
-            DebugMessage = DebugMessage .. "-"
+            DebugMessage = DebugMessage .. "----"
         end
-        if (ypos == 0xD8 or bit.band(airOptions, 0xF0) ~= 0) and buttonStrength == 0 then
-            DebugMessage = DebugMessage .. "B"
-        else
-            DebugMessage = DebugMessage .. "-"
-        end
-        if (ypos == 0xD8 or bit.band(airOptions, 0xF00) ~= 0) and buttonStrength <= 2 then
-            DebugMessage = DebugMessage .. "C"
-        else
-            DebugMessage = DebugMessage .. "-"
-        end
-        if (ypos == 0xD8 or bit.band(airOptions, 0xF000) ~= 0) and buttonStrength <= 4 then
-            DebugMessage = DebugMessage .. "L"
-        else
-            DebugMessage = DebugMessage .. "-"
-        end
-    else
-        DebugMessage = DebugMessage .. "----"
-    end
 
-    if actions.Special then
-        DebugMessage = DebugMessage .. "S"
-    else
-        DebugMessage = DebugMessage .. "-"
+        if actions.Special then
+            DebugMessage = DebugMessage .. "S"
+        else
+            DebugMessage = DebugMessage .. "-"
+        end
     end
-
     return actions
 end
 
-local function isFrozenP1()
-    return (sprTimeP1 == prevTimeP1 and sprFrameP1 == prevFrameP1 and currentAnim == prevAnimP1)
+local function isFrozen(p)
+    return (playerState[p].SprTime == playerState[p].PrevTime and playerState[p].SprFrame == playerState[p].PrevFrame
+        and playerState[p].CurrentAnimation == playerState[p].PrevAnimation)
 end
 
-function ParseFrameDataP1()
-    sprTimeP1, sprFrameP1 = rw(players[1].SPRTime), rw(players[1].SPRFrame)
+function ParseFrameData(p)
+    playerState[p].SprTime, playerState[p].SprFrame = rw(players[p].SPRTime), rw(players[p].SPRFrame)
 
-    local move_id = rws(players[1].AnimationID)
-    local is_active = (rws(players[1].AttackState) ~= 0)
+    local move_id = rws(players[p].AnimationID)
+    local is_active = (rws(players[p].AttackState) ~= 0)
+    local is_vulnerable = 0
 
-    if move_id == currentAnim or isNeutralFrame(1) then
-        if isFrozenP1() == false then
-            currentFrame = currentFrame + 1
+    if move_id == playerState[p].CurrentAnimation or isNeutralFrame(p) then
+        if isFrozen(p) == false then
+            playerState[p].CurrentFrame = playerState[p].CurrentFrame + 1
         end
         if is_active then
-            if startup == -1 then
-                if isFrozenP1() == false then
-                    startup = currentFrame
+            if playerState[p].Startup == -1 then
+                if isFrozen(p) == false then
+                    playerState[p].Startup = playerState[p].CurrentFrame
                 else
-                    startup = currentFrame + 1
+                    playerState[p].Startup = playerState[p].CurrentFrame + 1
                 end
             end
             -- manage gaps in active frames
-            if lastHitEndFrame < currentFrame and lastHitStartFrame < lastHitEndFrame then
-                if isFrozenP1() == false then
-                    lastHitStartFrame = currentFrame
+            if playerState[p].LastHitEndFrame < playerState[p].CurrentFrame and playerState[p].LastHitStartFrame < playerState[p].LastHitEndFrame then
+                if isFrozen(p) == false then
+                    playerState[p].LastHitStartFrame = playerState[p].CurrentFrame
                 else
-                    lastHitStartFrame = currentFrame + 1
+                    playerState[p].LastHitStartFrame = playerState[p].CurrentFrame + 1
                 end
             end
-            active = currentFrame - startup + 1
+            playerState[p].Active = playerState[p].CurrentFrame - playerState[p].Startup + 1
         else
             -- not currently active, add active period to activeStr
-            if lastHitStartFrame > lastHitEndFrame then
+            if playerState[p].LastHitStartFrame > playerState[p].LastHitEndFrame then
                 -- not active anymore, use previous currentFrame value
-                if isFrozenP1() == false then
-                    lastHitEndFrame = currentFrame - 1
+                if isFrozen(p) == false then
+                    playerState[p].LastHitEndFrame = playerState[p].CurrentFrame - 1
                 else
-                    lastHitEndFrame = currentFrame
+                    playerState[p].LastHitEndFrame = playerState[p].CurrentFrame
                 end
-                formatActiveString()
+                formatActiveString(1)
             end
         end
     else
-        if startup ~= -1 then
+        if playerState[p].Startup ~= -1 then
             -- manage any hanging active periods
-            if lastHitStartFrame > lastHitEndFrame then
-                lastHitEndFrame = currentFrame
-                formatActiveString()
+            if playerState[p].LastHitStartFrame > playerState[p].LastHitEndFrame then
+                playerState[p].LastHitEndFrame = playerState[p].CurrentFrame
+                formatActiveString(1)
             end
-            recovery = currentFrame - ((startup - 1) + active)
+            playerState[p].Recovery = playerState[p].CurrentFrame -
+                ((playerState[p].Startup - 1) + playerState[p].Active)
             -- -1 because using first active for startup
-            FrameDataOutput = "Move ID " .. formatHex(currentAnim) ..
-                ": S" .. startup .. " A" .. active .. "(" .. activeStr .. ") R" .. recovery .. " (T" ..
-                startup + active + recovery - 1 .. ") "
+            if p == 1 then
+                FrameDataOutput = "Move ID " .. formatHex(playerState[p].CurrentAnimation) ..
+                    ": S" ..
+                    playerState[p].Startup ..
+                    " A" ..
+                    playerState[p].Active ..
+                    "(" .. playerState[p].ActiveString .. ") R" .. playerState[p].Recovery .. " (T" ..
+                    playerState[p].Startup + playerState[p].Active + playerState[p].Recovery - 1 .. ")"
+            end
         end
-        currentFrame, currentAnim, startup, active, recovery, activeStr, lastHitStartFrame, lastHitEndFrame = 1, move_id,
-            -1, -1, -1, "", -2, -1
+        playerState[p].CurrentFrame, playerState[p].CurrentAnimation, playerState[p].Startup, playerState[p].Active, playerState[p].Recovery, playerState[p].ActiveString, playerState[p].LastHitStartFrame, playerState[p].LastHitEndFrame =
+            1, move_id, -1, -1, -1, "", -2, -1
     end
-    DebugMessage = DebugMessage .. " - S" .. lastHitStartFrame .. "E" .. lastHitEndFrame .. " | " .. activeStr
-    NowActive = move_id
+    if p == 1 then NowActive = formatHex(move_id) .. "." .. playerState[1].CurrentFrame end
 end
 
-function ParseProjectileDataP1()
-    local move_id = rws(players[1].AnimationID)
+function ParseProjectileData(p)
+    local move_id = rws(players[p].AnimationID)
+    playerState[p].ProjActive = CheckForActiveProjectiles(p)
 
-    if ProjectileActiveP1 then
-        if projectileStartup == -1 then
+    if playerState[p].ProjActive then
+        if playerState[p].ProjStartup == -1 then
             -- new projectile
-            projectileFrame = currentFrame -
-                1 -- ProjectileActiveP1 is fetched during hitbox parsing, which happens later so is 1f late
-            projectileStartup = projectileFrame
-            projectileMoveID = move_id
+            playerState[p].ProjFrame = playerState[p].CurrentFrame
+
+            playerState[p].ProjStartup = playerState[p].ProjFrame
+            playerState[p].ProjMoveID = move_id
         else
-            if isFrozenP1() == false then
-                projectileFrame = projectileFrame + 1
+            if isFrozen(p) == false then
+                playerState[p].ProjFrame = playerState[p].ProjFrame + 1
             end
             -- check if spawning move still ongoing
-            if projectileMoveID == move_id or isNeutralFrame(1) then
-                projectileAnimLength = projectileFrame - (startup - 1)
+            if playerState[p].ProjMoveID == move_id or isNeutralFrame(p) then
+                playerState[p].ProjAnimLength = playerState[p].ProjFrame
             end
         end
-        projectileActiveTime = (projectileFrame - projectileStartup) + 1
+        playerState[p].ProjActiveTime = (playerState[p].ProjFrame - playerState[p].ProjStartup) + 1
     else
         -- check if spawning move still ongoing
-        if projectileMoveID == move_id or isNeutralFrame(1) then
-            if isFrozenP1 then
-                projectileFrame = projectileFrame + 1
+        if playerState[p].ProjMoveID == move_id or isNeutralFrame(p) then
+            if isFrozen(p) then
+                playerState[p].ProjFrame = playerState[p].ProjFrame + 1
             end
-            projectileAnimLength = projectileFrame - (startup - 1)
+            playerState[p].ProjAnimLength = playerState[p].ProjFrame
         else
-            if projectileStartup ~= -1 then
+            if playerState[p].ProjStartup ~= -1 then
                 -- format projectile string
-                ProjectileDataOutput = "S" ..
-                    projectileStartup ..
-                    "f A" .. projectileActiveTime .. "f - Anim: " .. projectileAnimLength .. "f total"
-                projectileStartup, projectileFrame, projectileActiveTime, projectileAnimLength, projectileMoveID = -1, -1,
-                    -1, -1, -1
+                if p == 1 then
+                    ProjectileDataOutput = "S" ..
+                        playerState[p].ProjStartup .. " A" .. playerState[p].ProjActiveTime ..
+                        " - Anim: " .. playerState[p].ProjAnimLength .. "T";
+                end
+                playerState[p].ProjStartup, playerState[p].ProjFrame, playerState[p].ProjActiveTime, playerState[p].ProjAnimLength, playerState[p].ProjMoveID =
+                    -1, -1, -1, -1, -1
             end
         end
     end
 end
 
-local function isFrozenP2()
-    --return superFlash == 0x7 or hitstop ~= 0
-
-    return (sprTimeP2 == prevTimeP2 and sprFrameP2 == prevFrameP2)
-end
-
-function CheckActionableP1()
-    actions = IsPlayerActionable(1)
+function CheckActionable(p)
+    actions = IsPlayerActionable(p)
 
     local canAct = actions.Movement
-    isActionableP1 = canAct
-end
-
-function CheckActionableP2()
-    actions = IsPlayerActionable(2)
-
-    local canAct = actions.Movement
-    isActionableP2 = canAct
+    playerState[p].IsActionable = canAct
 end
 
 function ParseFrameAdv()
-    -- ParseFrameDataP2() doesn't exist yet, update sprite data here
-    sprTimeP2, sprFrameP2 = rw(players[2].SPRTime), rw(players[2].SPRFrame)
-
-    if isActionableP1 then
+    if playerState[1].IsActionable then
         -- p1 is actionable, increment the counter
-        if isFrozenP1() == false then
-            framesSinceP1Actionable = framesSinceP1Actionable + 1
+        if isFrozen(1) == false then
+            playerState[1].FramesSinceActionable = playerState[1].FramesSinceActionable + 1
         end
     else
         -- not actionable; reset the counter
-        framesSinceP1Actionable = -1
+        playerState[1].FramesSinceActionable = -1
     end
 
-    if isActionableP2 then
+    if playerState[2].IsActionable then
         -- p2 is actionable, increment the counter
-        if isFrozenP2() == false then
-            framesSinceP2Actionable = framesSinceP2Actionable + 1
+        if isFrozen(2) == false then
+            playerState[2].FramesSinceActionable = playerState[2].FramesSinceActionable + 1
         end
     else
         -- not actionable; reset the counter
-        framesSinceP2Actionable = -1
+        playerState[2].FramesSinceActionable = -1
     end
 
-    if isActionableP1 and isActionableP2 then
-        formatAdvantage(framesSinceP1Actionable - framesSinceP2Actionable)
+
+    if playerState[1].IsActionable and playerState[2].IsActionable then
+        formatAdvantage(playerState[1].FramesSinceActionable - playerState[2].FramesSinceActionable)
     end
 
-    DebugMessage = DebugMessage .. ". P1: " .. framesSinceP1Actionable .. ", P2: " .. framesSinceP2Actionable
+    --DebugMessage = DebugMessage ..
+    --    ". P1: " .. playerState[1].FramesSinceActionable .. ", P2: " .. playerState[2].FramesSinceActionable
 
-    prevTimeP1, prevFrameP1, prevAnimP1, prevTimeP2, prevFrameP2 = sprTimeP1, sprFrameP1, currentAnim, sprTimeP2,
-        sprFrameP2
+    playerState[1].PrevTime, playerState[1].PrevFrame, playerState[1].PrevAnimation, playerState[2].PrevTime, playerState[2].PrevFrame, playerState[2].PrevAnimation =
+        playerState[1].SprTime, playerState[1].SprFrame, playerState[1].CurrentAnimation, playerState[2].SprTime,
+        playerState[2].SprFrame, playerState[2].CurrentAnimation
 end

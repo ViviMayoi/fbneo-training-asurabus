@@ -68,14 +68,14 @@ players = {
 
     ---------------------------------------
     -- Projectiles
-    pOn                 = 0x4039B0,
-    pType               = 0x4039B1,
-    pID                 = 0x4039B2,
+    pOn                 = 0x4039B0, -- byte
+    pType               = 0x4039B1, -- byte
+    pID                 = 0x4039B2, -- word
     pXPos               = 0x4039B4,
     pYPos               = 0x4039B6,
     pFacing             = 0x4039B8,
-    pTime               = 0x4039BB,
-    pHit                = 0x4039BF,
+    pTime               = 0x4039BB, -- byte
+    pHit                = 0x4039BF, -- byte
 
     -- Other (all of these are words)
     IncomingAnimationID = 0x4033C0,
@@ -118,6 +118,19 @@ players = {
 
   -- Player 2
   {
+    ---------------------------------------
+
+    ---------------------------------------
+    -- Projectiles
+    pOn                 = 0x404670, -- byte
+    pType               = 0x404671, -- byte
+    pID                 = 0x404672, -- word
+    pXPos               = 0x404674,
+    pYPos               = 0x404676,
+    pFacing             = 0x404678,
+    pTime               = 0x40467B, -- byte
+    pHit                = 0x40467F, -- byte
+
     IncomingAnimationID = 0x404076,
     SPRFrame            = 0x404078,
     SPRTime             = 0x40407A,
@@ -136,6 +149,7 @@ players = {
     CanCancel           = 0x4041BA,
     Hitstun             = 0x4041DE,
     InHitstun           = 0x4041E2,
+    Character           = 0x404666,
     StanceState         = 0x404A9A,
     Unused_2            = 0x404AA2,
     Unused_4            = 0x404AA4,

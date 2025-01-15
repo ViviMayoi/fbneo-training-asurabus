@@ -129,21 +129,22 @@ function RunBefore() -- runs before every frame
 end
 
 function RunAfter() -- runs after every emulated frame
-	CheckActionableP2()
-	CheckActionableP1()
-	ParseFrameDataP1()
-	ParseProjectileDataP1()
+	CheckActionable(1)
+	CheckActionable(2)
+	ParseFrameData(1)
+	ParseFrameData(2)
+	ParseProjectileData(1)
 	ParseFrameAdv()
 end
 
 function Run() -- runs on every displayed frame
-	gui.text(10, 230, FrameDataOutput .. Advantage .. " [" .. formatHex(NowActive) .. "]");
+	gui.text(10, 230, FrameDataOutput .. Advantage .. " [" .. NowActive .. "]");
 	gui.text(10, 215, ProjectileDataOutput);
 	gui.text(4, 4, DebugMessage)
 end
 
 emu.registerstart(function()
-	NowActive = 0
+	NowActive = "N/A"
 	FrameDataOutput = "N/A";
 	ProjectileDataOutput = "N/A";
 	DebugMessage = "How did you see this?"

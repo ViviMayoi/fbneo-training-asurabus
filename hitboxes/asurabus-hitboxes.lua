@@ -6,8 +6,6 @@ require("/games/asurabus/gamestate")
 local rb, rbs, rw, rws, rd = memory.readbyte, memory.readbytesigned, memory.readword, memory.readwordsigned,
 	memory.readdword
 CameraX = 0xA0
-ProjectileActiveP1 = false
-ProjectileActiveP2 = false
 
 function P1() --P1 Info
 	local XPos_SCR     = rws(0x004033CE)
@@ -81,7 +79,6 @@ function P1() --P1 Info
 	local A_YT         = rws(0x00404032)
 	local A_XL         = rws(0x00404034)
 	local A_YB         = rws(0x00404036)
-	ProjectileActiveP1 = false
 
 	for i = 0, 31, 1 do
 		local On     = rbs(0x004039B0 + (i * 0x10))
@@ -108,7 +105,6 @@ function P1() --P1 Info
 				skipProjectile = true;
 			end
 			if (skipProjectile == false) then
-				ProjectileActiveP1 = true
 				if Facing == 1 then -- facing right
 					gui.box(
 						XPos - CameraX + A_XR,
@@ -169,7 +165,6 @@ function P1() --P1 Info
 			if Active > 0 then
 				if ATK > 0 then
 					if ATK == 1 then
-						ProjectileActiveP1 = true
 						if Facing == 0 then
 							gui.box(
 								XPos - CameraX - 15,
@@ -454,8 +449,6 @@ function P2() --P2 Info
 
 	skullBgColor       = 0x00000040
 	skullBorderColor   = 0x000000FF
-	ProjectileActiveP2 = false
-
 	local A1_XR        = rws(0x004040AE)
 	local A1_YT        = rws(0x004040B0)
 	local A1_XL        = rws(0x004040B2)
@@ -508,7 +501,6 @@ function P2() --P2 Info
 	local A_YT         = rws(0x00404CF2)
 	local A_XL         = rws(0x00404CF4)
 	local A_YB         = rws(0x00404CF6)
-	ProjectileActiveP2 = false
 
 	for i = 0, 31, 1 do
 		local On     = rbs(0x00404670 + (i * 0x10))
@@ -524,7 +516,7 @@ function P2() --P2 Info
 			local skipProjectile = false;
 			-- extra checks for ＳＰＥＣＩＡＬ ＣＡＳＥＳ 🫠
 			if (Character == ALICE_HIDDEN) then
-				if (ID == 92 and Time > 60) then                      -- skip 214X inactive frames
+				if (ID == 92 and Time > 60) then  -- skip 214X inactive frames
 					skipProjectile = true;
 				elseif ((ID == 51 or ID == 95) and (Time < 13 or Time > 21)) then -- 623X is only active on frames 13 to 21 of being on screen
 					skipProjectile = true;
@@ -535,7 +527,6 @@ function P2() --P2 Info
 				skipProjectile = true;
 			end
 			if (skipProjectile == false) then
-				ProjectileActiveP2 = true
 				if Facing == 1 then
 					gui.box(
 						XPos - CameraX + A_XR - 1,
@@ -590,7 +581,6 @@ function P2() --P2 Info
 			if (Active > 0) then
 				if ATK > 0 then
 					if ATK == 1 then
-						ProjectileActiveP2 = true
 						if Facing == 0 then
 							gui.box(
 								XPos - CameraX - 15,
