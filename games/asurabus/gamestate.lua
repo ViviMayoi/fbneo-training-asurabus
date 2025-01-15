@@ -63,7 +63,7 @@ local playerState = {
 
 Advantage = ""
 
-function CheckForActiveProjectiles(p)
+local function checkForActiveProjectiles(p)
     for i = 0, 31, 1 do
         local On   = rbs(players[p].pOn + (i * 0x10))
         local Type = rbs(players[p].pType + (i * 0x10))
@@ -93,10 +93,6 @@ function CheckForActiveProjectiles(p)
     return false
 end
 
-function formatHex(x)
-    return string.upper(string.format("%02x", x))
-end
-
 local function formatActiveString(p)
     if playerState[p].ActiveString ~= "" then
         playerState[p].ActiveString = playerState[p].ActiveString ..
@@ -114,6 +110,15 @@ local function formatAdvantage(adv)
     end
 end
 
+local function formatHex(x)
+    return string.upper(string.format("%02x", x))
+end
+
+local function isFrozen(p)
+    return (playerState[p].SprTime == playerState[p].PrevTime and playerState[p].SprFrame == playerState[p].PrevFrame
+        and playerState[p].CurrentAnimation == playerState[p].PrevAnimation)
+end
+
 local function isNeutralFrame(p)
     local move_id = rws(players[p].AnimationID)
 
@@ -126,6 +131,13 @@ local function isNeutralFrame(p)
     until (i == #ANIMATIONS_NFRAME)
 
     return contains and playerState[p].IsActionable == false
+end
+
+function CheckActionable(p)
+    actions = IsPlayerActionable(p)
+
+    local canAct = actions.Movement
+    playerState[p].IsActionable = canAct
 end
 
 function IsPlayerActionable(p)
@@ -227,11 +239,6 @@ function IsPlayerActionable(p)
     return actions
 end
 
-local function isFrozen(p)
-    return (playerState[p].SprTime == playerState[p].PrevTime and playerState[p].SprFrame == playerState[p].PrevFrame
-        and playerState[p].CurrentAnimation == playerState[p].PrevAnimation)
-end
-
 function ParseFrameData(p)
     playerState[p].SprTime, playerState[p].SprFrame = rw(players[p].SPRTime), rw(players[p].SPRFrame)
 
@@ -300,7 +307,7 @@ end
 
 function ParseProjectileData(p)
     local move_id = rws(players[p].AnimationID)
-    playerState[p].ProjActive = CheckForActiveProjectiles(p)
+    playerState[p].ProjActive = checkForActiveProjectiles(p)
 
     if playerState[p].ProjActive then
         if playerState[p].ProjStartup == -1 then
@@ -339,13 +346,6 @@ function ParseProjectileData(p)
             end
         end
     end
-end
-
-function CheckActionable(p)
-    actions = IsPlayerActionable(p)
-
-    local canAct = actions.Movement
-    playerState[p].IsActionable = canAct
 end
 
 function ParseFrameAdv()
