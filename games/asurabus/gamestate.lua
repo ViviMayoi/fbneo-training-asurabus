@@ -134,9 +134,9 @@ local function isNeutralFrame(p)
 end
 
 function CheckActionable(p)
-    actions = IsPlayerActionable(p)
-
-    local canAct = actions.Movement
+    local actions = IsPlayerActionable(p)
+    local anim = rws(players[p].AnimationID)
+    local canAct = (actions.Movement and actions.Attack) or anim == 0
     playerState[p].IsActionable = canAct
 end
 
@@ -193,7 +193,7 @@ function IsPlayerActionable(p)
         actions.Attack = false
     end
 
-    if 8 < blockstun or kd1 ~= 0 or kd2 ~= 0 or cancelAvailable == 5 or actionLock ~= 0 then
+    if blockstun > 8 or kd1 ~= 0 or kd2 ~= 0 or cancelAvailable == 5 or actionLock ~= 0 then
         actions.Movement = false
     end
 
